@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Plus, UserPlus } from "lucide-react";
+import { UserPlus } from "lucide-react";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -51,16 +51,17 @@ export function CreateWorkerDialog() {
         <Button 
           size="lg"
           className="w-full bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 shadow-lg shadow-indigo-200"
+          data-testid="button-add-worker"
         >
           <UserPlus className="w-5 h-5 mr-2" />
-          Add New Worker
+          Добавить сотрудника
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-[425px] glass-card border-white/20">
         <DialogHeader>
-          <DialogTitle className="text-2xl font-display text-indigo-950">Add Worker</DialogTitle>
+          <DialogTitle className="text-2xl font-display text-indigo-950">Новый сотрудник</DialogTitle>
           <DialogDescription>
-            Create a new team member profile to assign tasks to.
+            Создайте профиль сотрудника для назначения задач.
           </DialogDescription>
         </DialogHeader>
         
@@ -71,11 +72,12 @@ export function CreateWorkerDialog() {
               name="name"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className="text-indigo-900 font-medium">Full Name</FormLabel>
+                  <FormLabel className="text-indigo-900 font-medium">Имя</FormLabel>
                   <FormControl>
                     <Input 
-                      placeholder="e.g. Sarah Miller" 
+                      placeholder="Например: Иван Петров" 
                       className="premium-input"
+                      data-testid="input-worker-name"
                       {...field} 
                     />
                   </FormControl>
@@ -89,8 +91,9 @@ export function CreateWorkerDialog() {
                 type="submit" 
                 disabled={createWorker.isPending}
                 className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2 rounded-xl"
+                data-testid="button-submit-worker"
               >
-                {createWorker.isPending ? "Creating..." : "Create Worker Profile"}
+                {createWorker.isPending ? "Создание..." : "Создать сотрудника"}
               </Button>
             </DialogFooter>
           </form>

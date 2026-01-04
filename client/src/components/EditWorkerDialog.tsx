@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useEffect } from "react";
 import { useUpdateWorker } from "@/hooks/use-workers";
 import {
   Dialog,
@@ -38,7 +38,6 @@ export function EditWorkerDialog({ worker, open, onOpenChange }: EditWorkerDialo
     },
   });
 
-  // Reset form when worker changes
   useEffect(() => {
     form.reset({ name: worker.name });
   }, [worker, form]);
@@ -58,7 +57,7 @@ export function EditWorkerDialog({ worker, open, onOpenChange }: EditWorkerDialo
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[425px] glass-card">
         <DialogHeader>
-          <DialogTitle className="font-display text-indigo-950">Edit Worker</DialogTitle>
+          <DialogTitle className="font-display text-indigo-950">Редактирование сотрудника</DialogTitle>
         </DialogHeader>
         
         <Form {...form}>
@@ -68,9 +67,13 @@ export function EditWorkerDialog({ worker, open, onOpenChange }: EditWorkerDialo
               name="name"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className="text-indigo-900 font-medium">Full Name</FormLabel>
+                  <FormLabel className="text-indigo-900 font-medium">Имя</FormLabel>
                   <FormControl>
-                    <Input className="premium-input" {...field} />
+                    <Input 
+                      className="premium-input" 
+                      data-testid="input-edit-worker-name"
+                      {...field} 
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -82,8 +85,9 @@ export function EditWorkerDialog({ worker, open, onOpenChange }: EditWorkerDialo
                 type="submit" 
                 disabled={updateWorker.isPending}
                 className="w-full bg-indigo-600 hover:bg-indigo-700"
+                data-testid="button-save-worker"
               >
-                {updateWorker.isPending ? "Saving..." : "Save Changes"}
+                {updateWorker.isPending ? "Сохранение..." : "Сохранить изменения"}
               </Button>
             </DialogFooter>
           </form>

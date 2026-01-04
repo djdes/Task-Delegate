@@ -22,7 +22,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Worker, Task } from "@shared/schema";
 
@@ -36,11 +36,10 @@ export default function Dashboard() {
   const deleteWorker = useDeleteWorker();
   const deleteTask = useDeleteTask();
 
-  // Helper to get worker name for a task
   const getWorkerName = (workerId: number | null) => {
-    if (!workerId) return "Unassigned";
+    if (!workerId) return "Не назначен";
     const worker = workers.find(w => w.id === workerId);
-    return worker ? worker.name : "Unknown Worker";
+    return worker ? worker.name : "Неизвестный";
   };
 
   const getWorkerInitials = (name: string) => {
@@ -67,14 +66,11 @@ export default function Dashboard() {
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-6 border-b border-slate-200">
           <div>
             <h1 className="text-4xl font-display font-bold text-slate-900">
-              Task Delegation
+              Делегирование задач
             </h1>
             <p className="text-slate-500 mt-2 text-lg">
-              Manage your team and assign responsibilities efficiently.
+              Управляйте командой и распределяйте задачи эффективно.
             </p>
-          </div>
-          <div className="flex gap-3">
-             {/* Stats could go here */}
           </div>
         </div>
 
@@ -86,7 +82,7 @@ export default function Dashboard() {
             <div className="flex items-center justify-between">
               <h2 className="text-xl font-display font-semibold text-indigo-950 flex items-center gap-2">
                 <Users className="w-5 h-5 text-indigo-600" />
-                Team Members
+                Сотрудники
                 <Badge variant="secondary" className="bg-indigo-100 text-indigo-700 ml-2">
                   {workers.length}
                 </Badge>
@@ -99,8 +95,8 @@ export default function Dashboard() {
               {workers.length === 0 ? (
                 <div className="text-center p-8 bg-white rounded-2xl border border-dashed border-slate-300">
                   <UserCircle className="w-12 h-12 text-slate-300 mx-auto mb-3" />
-                  <p className="text-slate-500 font-medium">No team members yet</p>
-                  <p className="text-sm text-slate-400">Add your first worker above</p>
+                  <p className="text-slate-500 font-medium">Сотрудников пока нет</p>
+                  <p className="text-sm text-slate-400">Добавьте первого сотрудника выше</p>
                 </div>
               ) : (
                 workers.map(worker => (
@@ -119,7 +115,7 @@ export default function Dashboard() {
                           {worker.name}
                         </h3>
                         <p className="text-xs text-slate-500">
-                          {tasks.filter(t => t.workerId === worker.id).length} active tasks
+                          {tasks.filter(t => t.workerId === worker.id).length} задач
                         </p>
                       </div>
                     </div>
@@ -132,13 +128,13 @@ export default function Dashboard() {
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
                         <DropdownMenuItem onClick={() => setEditingWorker(worker)}>
-                          <Edit2 className="w-4 h-4 mr-2" /> Edit
+                          <Edit2 className="w-4 h-4 mr-2" /> Редактировать
                         </DropdownMenuItem>
                         <DropdownMenuItem 
                           className="text-red-600 focus:text-red-600"
                           onClick={() => deleteWorker.mutate(worker.id)}
                         >
-                          <Trash2 className="w-4 h-4 mr-2" /> Delete
+                          <Trash2 className="w-4 h-4 mr-2" /> Удалить
                         </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
@@ -153,7 +149,7 @@ export default function Dashboard() {
             <div className="flex items-center justify-between">
               <h2 className="text-xl font-display font-semibold text-slate-900 flex items-center gap-2">
                 <CheckSquare className="w-5 h-5 text-slate-700" />
-                Active Tasks
+                Задачи
                 <Badge variant="secondary" className="bg-slate-100 text-slate-700 ml-2">
                   {tasks.length}
                 </Badge>
@@ -166,8 +162,8 @@ export default function Dashboard() {
               {tasks.length === 0 ? (
                 <div className="col-span-full text-center p-12 bg-white rounded-2xl border border-dashed border-slate-300">
                   <Briefcase className="w-12 h-12 text-slate-300 mx-auto mb-3" />
-                  <p className="text-slate-500 font-medium">No tasks assigned</p>
-                  <p className="text-sm text-slate-400">Create a task to get started</p>
+                  <p className="text-slate-500 font-medium">Задач пока нет</p>
+                  <p className="text-sm text-slate-400">Создайте первую задачу</p>
                 </div>
               ) : (
                 tasks.map(task => (
@@ -188,13 +184,13 @@ export default function Dashboard() {
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
                             <DropdownMenuItem onClick={() => setEditingTask(task)}>
-                              <Edit2 className="w-4 h-4 mr-2" /> Edit
+                              <Edit2 className="w-4 h-4 mr-2" /> Редактировать
                             </DropdownMenuItem>
                             <DropdownMenuItem 
                               className="text-red-600 focus:text-red-600"
                               onClick={() => deleteTask.mutate(task.id)}
                             >
-                              <Trash2 className="w-4 h-4 mr-2" /> Delete
+                              <Trash2 className="w-4 h-4 mr-2" /> Удалить
                             </DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>
@@ -207,7 +203,7 @@ export default function Dashboard() {
 
                     <div className="pt-4 border-t border-slate-100 mt-4 flex items-center justify-between">
                       <span className="text-xs font-medium text-slate-400 uppercase tracking-wider">
-                        Assigned To
+                        Исполнитель
                       </span>
                       <div className="flex items-center gap-2">
                         {task.workerId ? (
@@ -221,7 +217,7 @@ export default function Dashboard() {
                           </Badge>
                         ) : (
                           <Badge variant="outline" className="bg-slate-50 text-slate-500 border-slate-200">
-                            Unassigned
+                            Не назначен
                           </Badge>
                         )}
                       </div>
