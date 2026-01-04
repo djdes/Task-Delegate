@@ -55,22 +55,22 @@ export function EditWorkerDialog({ worker, open, onOpenChange }: EditWorkerDialo
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[425px] glass-card">
+      <DialogContent className="sm:max-w-[400px]">
         <DialogHeader>
-          <DialogTitle className="font-display text-indigo-950">Редактирование сотрудника</DialogTitle>
+          <DialogTitle>Редактировать сотрудника</DialogTitle>
         </DialogHeader>
         
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 pt-4">
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 pt-2">
             <FormField
               control={form.control}
               name="name"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className="text-indigo-900 font-medium">Имя</FormLabel>
+                  <FormLabel>Имя</FormLabel>
                   <FormControl>
                     <Input 
-                      className="premium-input" 
+                      className="things-input" 
                       data-testid="input-edit-worker-name"
                       {...field} 
                     />
@@ -82,12 +82,18 @@ export function EditWorkerDialog({ worker, open, onOpenChange }: EditWorkerDialo
             
             <DialogFooter>
               <Button 
+                type="button" 
+                variant="ghost"
+                onClick={() => onOpenChange(false)}
+              >
+                Отмена
+              </Button>
+              <Button 
                 type="submit" 
                 disabled={updateWorker.isPending}
-                className="w-full bg-indigo-600 hover:bg-indigo-700"
                 data-testid="button-save-worker"
               >
-                {updateWorker.isPending ? "Сохранение..." : "Сохранить изменения"}
+                {updateWorker.isPending ? "Сохранение..." : "Сохранить"}
               </Button>
             </DialogFooter>
           </form>

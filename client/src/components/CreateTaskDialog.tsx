@@ -8,11 +8,10 @@ import {
   DialogTitle,
   DialogTrigger,
   DialogFooter,
-  DialogDescription,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ClipboardList } from "lucide-react";
+import { Plus, User } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
@@ -64,35 +63,31 @@ export function CreateTaskDialog() {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button 
-          size="lg"
-          className="w-full bg-slate-800 hover:bg-slate-900 text-white shadow-lg shadow-slate-200"
+        <button
+          className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-muted-foreground hover:bg-muted/50 transition-colors text-left"
           data-testid="button-add-task"
         >
-          <ClipboardList className="w-5 h-5 mr-2" />
-          Создать задачу
-        </Button>
+          <Plus className="w-5 h-5" />
+          <span className="text-sm">Новая задача</span>
+        </button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[425px] glass-card border-white/20">
+      <DialogContent className="sm:max-w-[450px]">
         <DialogHeader>
-          <DialogTitle className="text-2xl font-display text-slate-900">Новая задача</DialogTitle>
-          <DialogDescription>
-            Создайте задачу и назначьте исполнителя.
-          </DialogDescription>
+          <DialogTitle>Новая задача</DialogTitle>
         </DialogHeader>
         
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 pt-4">
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 pt-2">
             <FormField
               control={form.control}
               name="title"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className="text-slate-700 font-medium">Название задачи</FormLabel>
+                  <FormLabel>Название</FormLabel>
                   <FormControl>
                     <Input 
-                      placeholder="Например: Подготовить отчёт" 
-                      className="premium-input"
+                      placeholder="Что нужно сделать?" 
+                      className="things-input"
                       data-testid="input-task-title"
                       {...field} 
                     />
@@ -107,20 +102,21 @@ export function CreateTaskDialog() {
               name="workerId"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className="text-slate-700 font-medium">Исполнитель</FormLabel>
+                  <FormLabel>Исполнитель</FormLabel>
                   <Select 
                     onValueChange={field.onChange} 
                     defaultValue={field.value?.toString()}
                   >
                     <FormControl>
-                      <SelectTrigger className="premium-input w-full" data-testid="select-worker">
-                        <SelectValue placeholder="Выберите сотрудника..." />
+                      <SelectTrigger className="things-input w-full" data-testid="select-worker">
+                        <SelectValue placeholder="Выберите сотрудника" />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
                       {workers.length === 0 ? (
-                        <div className="p-2 text-sm text-muted-foreground text-center">
-                          Сотрудников нет. Сначала создайте сотрудника!
+                        <div className="p-3 text-sm text-muted-foreground text-center">
+                          <User className="w-8 h-8 mx-auto mb-2 text-muted-foreground/50" />
+                          <p>Сначала добавьте сотрудника</p>
                         </div>
                       ) : (
                         workers.map((worker) => (
@@ -138,12 +134,18 @@ export function CreateTaskDialog() {
             
             <DialogFooter>
               <Button 
+                type="button" 
+                variant="ghost"
+                onClick={() => setOpen(false)}
+              >
+                Отмена
+              </Button>
+              <Button 
                 type="submit" 
                 disabled={createTask.isPending}
-                className="w-full bg-slate-900 hover:bg-black text-white font-medium py-2 rounded-xl"
                 data-testid="button-submit-task"
               >
-                {createTask.isPending ? "Создание..." : "Создать задачу"}
+                {createTask.isPending ? "Создание..." : "Создать"}
               </Button>
             </DialogFooter>
           </form>

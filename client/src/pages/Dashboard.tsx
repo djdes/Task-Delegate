@@ -5,16 +5,19 @@ import { CreateWorkerDialog } from "@/components/CreateWorkerDialog";
 import { EditWorkerDialog } from "@/components/EditWorkerDialog";
 import { CreateTaskDialog } from "@/components/CreateTaskDialog";
 import { EditTaskDialog } from "@/components/EditTaskDialog";
-import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { 
   Users, 
-  CheckSquare, 
+  CheckCircle2,
+  Circle,
   Edit2, 
   Trash2, 
   MoreHorizontal, 
-  UserCircle,
-  Briefcase
+  User,
+  Plus,
+  Calendar,
+  Star,
+  Inbox
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -22,8 +25,6 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
 import { Worker, Task } from "@shared/schema";
 
 export default function Dashboard() {
@@ -32,7 +33,8 @@ export default function Dashboard() {
   
   const [editingWorker, setEditingWorker] = useState<Worker | null>(null);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
-  
+  const [completedTasks, setCompletedTasks] = useState<Set<number>>(new Set());
+
   const deleteWorker = useDeleteWorker();
   const deleteTask = useDeleteTask();
 
@@ -42,192 +44,206 @@ export default function Dashboard() {
     return worker ? worker.name : "Неизвестный";
   };
 
-  const getWorkerInitials = (name: string) => {
-    return name
-      .split(' ')
-      .map(part => part[0])
-      .join('')
-      .toUpperCase()
-      .slice(0, 2);
+  const toggleTaskComplete = (taskId: number) => {
+    setCompletedTasks(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(taskId)) {
+        newSet.delete(taskId);
+      } else {
+        newSet.add(taskId);
+      }
+      return newSet;
+    });
   };
 
   if (loadingWorkers || loadingTasks) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="flex flex-col items-center gap-3">
+          <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
+          <span className="text-sm text-muted-foreground">Загрузка...</span>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-slate-50/50 p-4 md:p-8 font-sans">
-      <div className="max-w-7xl mx-auto space-y-8">
-        {/* Header */}
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-6 border-b border-slate-200">
-          <div>
-            <h1 className="text-4xl font-display font-bold text-slate-900">
-              Делегирование задач
+    <div className="min-h-screen bg-background">
+      <div className="flex">
+        {/* Sidebar */}
+        <aside className="w-64 h-screen border-r border-border bg-card/50 p-4 flex flex-col">
+          <div className="mb-8">
+            <h1 className="text-xl font-semibold text-foreground flex items-center gap-2">
+              <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
+                <CheckCircle2 className="w-5 h-5 text-primary-foreground" />
+              </div>
+              Задачи
             </h1>
-            <p className="text-slate-500 mt-2 text-lg">
-              Управляйте командой и распределяйте задачи эффективно.
-            </p>
           </div>
-        </div>
 
-        {/* Main Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-          
-          {/* Left Column: Workers */}
-          <div className="lg:col-span-4 space-y-6">
-            <div className="flex items-center justify-between">
-              <h2 className="text-xl font-display font-semibold text-indigo-950 flex items-center gap-2">
-                <Users className="w-5 h-5 text-indigo-600" />
-                Сотрудники
-                <Badge variant="secondary" className="bg-indigo-100 text-indigo-700 ml-2">
-                  {workers.length}
-                </Badge>
-              </h2>
-            </div>
+          <nav className="space-y-1 mb-8">
+            <a href="#" className="things-sidebar-item active">
+              <Inbox className="w-5 h-5" />
+              <span>Входящие</span>
+              <span className="ml-auto text-xs text-muted-foreground">{tasks.length}</span>
+            </a>
+            <a href="#" className="things-sidebar-item">
+              <Calendar className="w-5 h-5" />
+              <span>Сегодня</span>
+            </a>
+            <a href="#" className="things-sidebar-item">
+              <Star className="w-5 h-5" />
+              <span>Избранное</span>
+            </a>
+          </nav>
 
+          <div className="mb-4">
+            <h3 className="things-section-header flex items-center gap-2">
+              <Users className="w-4 h-4" />
+              Сотрудники
+            </h3>
+          </div>
+
+          <div className="flex-1 space-y-1 overflow-y-auto">
+            {workers.length === 0 ? (
+              <p className="text-sm text-muted-foreground px-3 py-2">
+                Нет сотрудников
+              </p>
+            ) : (
+              workers.map(worker => (
+                <div
+                  key={worker.id}
+                  className="things-sidebar-item group"
+                >
+                  <div className="w-7 h-7 rounded-full bg-muted flex items-center justify-center">
+                    <User className="w-4 h-4 text-muted-foreground" />
+                  </div>
+                  <span className="flex-1 truncate">{worker.name}</span>
+                  <span className="text-xs text-muted-foreground">
+                    {tasks.filter(t => t.workerId === worker.id).length}
+                  </span>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button 
+                        variant="ghost" 
+                        size="icon" 
+                        className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
+                      >
+                        <MoreHorizontal className="w-3.5 h-3.5" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem onClick={() => setEditingWorker(worker)}>
+                        <Edit2 className="w-4 h-4 mr-2" /> Редактировать
+                      </DropdownMenuItem>
+                      <DropdownMenuItem 
+                        className="text-destructive focus:text-destructive"
+                        onClick={() => deleteWorker.mutate(worker.id)}
+                      >
+                        <Trash2 className="w-4 h-4 mr-2" /> Удалить
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
+              ))
+            )}
+          </div>
+
+          <div className="pt-4 border-t border-border mt-4">
             <CreateWorkerDialog />
-
-            <div className="space-y-4">
-              {workers.length === 0 ? (
-                <div className="text-center p-8 bg-white rounded-2xl border border-dashed border-slate-300">
-                  <UserCircle className="w-12 h-12 text-slate-300 mx-auto mb-3" />
-                  <p className="text-slate-500 font-medium">Сотрудников пока нет</p>
-                  <p className="text-sm text-slate-400">Добавьте первого сотрудника выше</p>
-                </div>
-              ) : (
-                workers.map(worker => (
-                  <Card 
-                    key={worker.id}
-                    className="p-4 flex items-center justify-between group hover:shadow-lg transition-all duration-300 border-l-4 border-l-transparent hover:border-l-indigo-500 bg-white"
-                  >
-                    <div className="flex items-center gap-4">
-                      <Avatar className="h-10 w-10 border-2 border-indigo-100">
-                        <AvatarFallback className="bg-indigo-50 text-indigo-600 font-semibold">
-                          {getWorkerInitials(worker.name)}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div>
-                        <h3 className="font-semibold text-slate-900 group-hover:text-indigo-700 transition-colors">
-                          {worker.name}
-                        </h3>
-                        <p className="text-xs text-slate-500">
-                          {tasks.filter(t => t.workerId === worker.id).length} задач
-                        </p>
-                      </div>
-                    </div>
-
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon" className="opacity-0 group-hover:opacity-100 transition-opacity">
-                          <MoreHorizontal className="w-4 h-4 text-slate-400" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem onClick={() => setEditingWorker(worker)}>
-                          <Edit2 className="w-4 h-4 mr-2" /> Редактировать
-                        </DropdownMenuItem>
-                        <DropdownMenuItem 
-                          className="text-red-600 focus:text-red-600"
-                          onClick={() => deleteWorker.mutate(worker.id)}
-                        >
-                          <Trash2 className="w-4 h-4 mr-2" /> Удалить
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </Card>
-                ))
-              )}
-            </div>
           </div>
+        </aside>
 
-          {/* Right Column: Tasks */}
-          <div className="lg:col-span-8 space-y-6">
-            <div className="flex items-center justify-between">
-              <h2 className="text-xl font-display font-semibold text-slate-900 flex items-center gap-2">
-                <CheckSquare className="w-5 h-5 text-slate-700" />
-                Задачи
-                <Badge variant="secondary" className="bg-slate-100 text-slate-700 ml-2">
-                  {tasks.length}
-                </Badge>
-              </h2>
+        {/* Main Content */}
+        <main className="flex-1 h-screen overflow-y-auto">
+          <div className="max-w-3xl mx-auto p-8">
+            {/* Header */}
+            <div className="mb-8">
+              <h2 className="text-2xl font-semibold text-foreground mb-1">Входящие</h2>
+              <p className="text-muted-foreground">
+                {tasks.length === 0 
+                  ? "Нет активных задач" 
+                  : `${tasks.length} ${tasks.length === 1 ? 'задача' : tasks.length < 5 ? 'задачи' : 'задач'}`
+                }
+              </p>
             </div>
 
-            <CreateTaskDialog />
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Task List */}
+            <div className="space-y-1 mb-8">
               {tasks.length === 0 ? (
-                <div className="col-span-full text-center p-12 bg-white rounded-2xl border border-dashed border-slate-300">
-                  <Briefcase className="w-12 h-12 text-slate-300 mx-auto mb-3" />
-                  <p className="text-slate-500 font-medium">Задач пока нет</p>
-                  <p className="text-sm text-slate-400">Создайте первую задачу</p>
+                <div className="text-center py-16">
+                  <div className="w-16 h-16 rounded-full bg-muted mx-auto mb-4 flex items-center justify-center">
+                    <Inbox className="w-8 h-8 text-muted-foreground" />
+                  </div>
+                  <h3 className="text-lg font-medium text-foreground mb-1">Нет задач</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Создайте первую задачу, чтобы начать работу
+                  </p>
                 </div>
               ) : (
-                tasks.map(task => (
-                  <Card 
-                    key={task.id}
-                    className="p-5 flex flex-col justify-between h-full hover:shadow-xl hover:-translate-y-1 transition-all duration-300 border-t-4 border-t-transparent hover:border-t-slate-800 bg-white"
-                  >
-                    <div>
-                      <div className="flex justify-between items-start mb-4">
-                        <div className="p-2 rounded-lg bg-slate-50 text-slate-500">
-                          <CheckSquare className="w-5 h-5" />
-                        </div>
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon" className="-mr-2 h-8 w-8 text-slate-300 hover:text-slate-600">
-                              <MoreHorizontal className="w-4 h-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuItem onClick={() => setEditingTask(task)}>
-                              <Edit2 className="w-4 h-4 mr-2" /> Редактировать
-                            </DropdownMenuItem>
-                            <DropdownMenuItem 
-                              className="text-red-600 focus:text-red-600"
-                              onClick={() => deleteTask.mutate(task.id)}
-                            >
-                              <Trash2 className="w-4 h-4 mr-2" /> Удалить
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </div>
-                      
-                      <h3 className="text-lg font-bold text-slate-900 mb-2 leading-tight">
-                        {task.title}
-                      </h3>
-                    </div>
-
-                    <div className="pt-4 border-t border-slate-100 mt-4 flex items-center justify-between">
-                      <span className="text-xs font-medium text-slate-400 uppercase tracking-wider">
-                        Исполнитель
-                      </span>
-                      <div className="flex items-center gap-2">
-                        {task.workerId ? (
-                          <Badge variant="outline" className="bg-indigo-50 text-indigo-700 border-indigo-200 font-medium pl-1 pr-2 py-0.5 h-6">
-                            <Avatar className="h-4 w-4 mr-1.5">
-                              <AvatarFallback className="text-[9px] bg-indigo-200 text-indigo-700">
-                                {getWorkerInitials(getWorkerName(task.workerId))}
-                              </AvatarFallback>
-                            </Avatar>
-                            {getWorkerName(task.workerId)}
-                          </Badge>
+                tasks.map(task => {
+                  const isCompleted = completedTasks.has(task.id);
+                  return (
+                    <div
+                      key={task.id}
+                      className={`things-list-item group ${isCompleted ? 'opacity-50' : ''}`}
+                    >
+                      <button
+                        onClick={() => toggleTaskComplete(task.id)}
+                        className="things-checkbox flex-shrink-0"
+                        data-testid={`checkbox-task-${task.id}`}
+                      >
+                        {isCompleted ? (
+                          <CheckCircle2 className="w-5 h-5 text-primary" />
                         ) : (
-                          <Badge variant="outline" className="bg-slate-50 text-slate-500 border-slate-200">
-                            Не назначен
-                          </Badge>
+                          <Circle className="w-5 h-5 text-border hover:text-primary/50 transition-colors" />
+                        )}
+                      </button>
+                      
+                      <div className="flex-1 min-w-0">
+                        <p className={`text-sm font-medium ${isCompleted ? 'line-through text-muted-foreground' : 'text-foreground'}`}>
+                          {task.title}
+                        </p>
+                        {task.workerId && (
+                          <p className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5">
+                            <User className="w-3 h-3" />
+                            {getWorkerName(task.workerId)}
+                          </p>
                         )}
                       </div>
+
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            className="h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity"
+                          >
+                            <MoreHorizontal className="w-4 h-4 text-muted-foreground" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem onClick={() => setEditingTask(task)}>
+                            <Edit2 className="w-4 h-4 mr-2" /> Редактировать
+                          </DropdownMenuItem>
+                          <DropdownMenuItem 
+                            className="text-destructive focus:text-destructive"
+                            onClick={() => deleteTask.mutate(task.id)}
+                          >
+                            <Trash2 className="w-4 h-4 mr-2" /> Удалить
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
                     </div>
-                  </Card>
-                ))
+                  );
+                })
               )}
             </div>
+
+            {/* Add Task */}
+            <CreateTaskDialog />
           </div>
-        </div>
+        </main>
       </div>
 
       {/* Edit Dialogs */}

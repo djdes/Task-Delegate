@@ -74,22 +74,22 @@ export function EditTaskDialog({ task, open, onOpenChange }: EditTaskDialogProps
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[425px] glass-card">
+      <DialogContent className="sm:max-w-[450px]">
         <DialogHeader>
-          <DialogTitle className="font-display text-slate-900">Редактирование задачи</DialogTitle>
+          <DialogTitle>Редактировать задачу</DialogTitle>
         </DialogHeader>
         
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 pt-4">
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 pt-2">
             <FormField
               control={form.control}
               name="title"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className="text-slate-700 font-medium">Название задачи</FormLabel>
+                  <FormLabel>Название</FormLabel>
                   <FormControl>
                     <Input 
-                      className="premium-input" 
+                      className="things-input" 
                       data-testid="input-edit-task-title"
                       {...field} 
                     />
@@ -104,14 +104,14 @@ export function EditTaskDialog({ task, open, onOpenChange }: EditTaskDialogProps
               name="workerId"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className="text-slate-700 font-medium">Исполнитель</FormLabel>
+                  <FormLabel>Исполнитель</FormLabel>
                   <Select 
                     onValueChange={field.onChange} 
                     value={field.value?.toString()}
                   >
                     <FormControl>
-                      <SelectTrigger className="premium-input w-full" data-testid="select-edit-worker">
-                        <SelectValue placeholder="Выберите сотрудника..." />
+                      <SelectTrigger className="things-input w-full" data-testid="select-edit-worker">
+                        <SelectValue placeholder="Выберите сотрудника" />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
@@ -129,12 +129,18 @@ export function EditTaskDialog({ task, open, onOpenChange }: EditTaskDialogProps
             
             <DialogFooter>
               <Button 
+                type="button" 
+                variant="ghost"
+                onClick={() => onOpenChange(false)}
+              >
+                Отмена
+              </Button>
+              <Button 
                 type="submit" 
                 disabled={updateTask.isPending}
-                className="w-full bg-slate-900 hover:bg-black text-white"
                 data-testid="button-save-task"
               >
-                {updateTask.isPending ? "Сохранение..." : "Сохранить изменения"}
+                {updateTask.isPending ? "Сохранение..." : "Сохранить"}
               </Button>
             </DialogFooter>
           </form>
