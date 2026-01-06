@@ -1,14 +1,112 @@
-import type { Express } from "express";
+import type { Express, Request, Response } from "express";
 import type { Server } from "http";
 import { storage } from "./storage";
 import { api } from "@shared/routes";
 import { z } from "zod";
+import bcrypt from "bcrypt";
+
+// Расширяем типы для сессий
+declare module "express-session" {
+  interface SessionData {
+    userId?: number;
+  }
+}
 
 export async function registerRoutes(
   httpServer: Server,
   app: Express
 ): Promise<Server> {
   
+  // Auth
+  app.post(api.auth.register.path, async (req, res) => {
+    try {
+      const input = api.auth.register.input.parse(req.body);
+      
+      // Проверяем, существует ли пользователь
+      const existingUser = await storage.getUserByEmail(input.email);
+      if (existingUser) {
+        return res.status(400).json({
+          message: "Пользователь с таким email уже существует",
+          field: "email",
+        });
+      }
+
+      const user = await storage.createUser(input);
+      // Автоматически авторизуем после регистрации
+      req.session.userId = user.id;
+      
+      res.status(201).json(user);
+    } catch (err: any) {
+      if (err instanceof z.ZodError) {
+        return res.status(400).json({
+          message: err.errors[0].message,
+          field: err.errors[0].path.join('.'),
+        });
+      }
+      console.error('Error registering user:', err);
+      res.status(500).json({ message: 'Ошибка регистрации', error: err.message });
+    }
+  });
+
+  app.post(api.auth.login.path, async (req, res) => {
+    try {
+      const input = api.auth.login.input.parse(req.body);
+      
+      const user = await storage.getUserByEmail(input.email);
+      if (!user) {
+        return res.status(401).json({
+          message: "Неверный email или пароль",
+          field: "email",
+        });
+      }
+
+      const isValidPassword = await bcrypt.compare(input.password, user.password);
+      if (!isValidPassword) {
+        return res.status(401).json({
+          message: "Неверный email или пароль",
+          field: "password",
+        });
+      }
+
+      req.session.userId = user.id;
+      const { password, ...userWithoutPassword } = user;
+      
+      res.json(userWithoutPassword);
+    } catch (err: any) {
+      if (err instanceof z.ZodError) {
+        return res.status(400).json({
+          message: err.errors[0].message,
+          field: err.errors[0].path.join('.'),
+        });
+      }
+      console.error('Error logging in:', err);
+      res.status(500).json({ message: 'Ошибка авторизации', error: err.message });
+    }
+  });
+
+  app.get(api.auth.me.path, async (req, res) => {
+    try {
+      if (!req.session.userId) {
+        return res.json(null);
+      }
+      
+      const user = await storage.getUserById(req.session.userId);
+      res.json(user || null);
+    } catch (err: any) {
+      console.error('Error fetching user:', err);
+      res.status(500).json({ message: 'Ошибка', error: err.message });
+    }
+  });
+
+  app.post(api.auth.logout.path, async (req, res) => {
+    req.session.destroy((err) => {
+      if (err) {
+        return res.status(500).json({ success: false, error: err.message });
+      }
+      res.json({ success: true });
+    });
+  });
+
   // Workers
   app.get(api.workers.list.path, async (req, res) => {
     try {

@@ -14,6 +14,20 @@ export function useTasks() {
   });
 }
 
+export function useTask(id: number) {
+  return useQuery({
+    queryKey: [api.tasks.get.path, id],
+    enabled: !!id,
+    queryFn: async () => {
+      const url = buildUrl(api.tasks.get.path, { id });
+      const res = await fetch(url, { credentials: "include" });
+      if (res.status === 404) return null;
+      if (!res.ok) throw new Error("Failed to fetch task");
+      return api.tasks.get.responses[200].parse(await res.json());
+    },
+  });
+}
+
 export function useCreateTask() {
   const queryClient = useQueryClient();
   const { toast } = useToast();

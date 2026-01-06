@@ -1,10 +1,8 @@
 import { useState } from "react";
+import { useLocation } from "wouter";
 import { useWorkers, useDeleteWorker } from "@/hooks/use-workers";
 import { useTasks, useDeleteTask } from "@/hooks/use-tasks";
-import { CreateWorkerDialog } from "@/components/CreateWorkerDialog";
-import { EditWorkerDialog } from "@/components/EditWorkerDialog";
-import { CreateTaskDialog } from "@/components/CreateTaskDialog";
-import { EditTaskDialog } from "@/components/EditTaskDialog";
+import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { 
   Users, 
@@ -25,14 +23,13 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Worker, Task } from "@shared/schema";
 
 export default function Dashboard() {
+  const [, setLocation] = useLocation();
+  const { user, logout } = useAuth();
   const { data: workers = [], isLoading: loadingWorkers } = useWorkers();
   const { data: tasks = [], isLoading: loadingTasks } = useTasks();
   
-  const [editingWorker, setEditingWorker] = useState<Worker | null>(null);
-  const [editingTask, setEditingTask] = useState<Task | null>(null);
   const [completedTasks, setCompletedTasks] = useState<Set<number>>(new Set());
 
   const deleteWorker = useDeleteWorker();
@@ -79,6 +76,33 @@ export default function Dashboard() {
               </div>
               Задачи
             </h1>
+            {user && (
+              <div className="mt-4 text-sm text-muted-foreground">
+                <p>{user.email}</p>
+                <button
+                  onClick={() => logout()}
+                  className="text-primary hover:underline mt-1"
+                >
+                  Выйти
+                </button>
+              </div>
+            )}
+            {!user && (
+              <div className="mt-4 space-y-2">
+                <button
+                  onClick={() => setLocation("/login")}
+                  className="text-sm text-primary hover:underline block"
+                >
+                  Войти
+                </button>
+                <button
+                  onClick={() => setLocation("/register")}
+                  className="text-sm text-muted-foreground hover:text-foreground block"
+                >
+                  Регистрация
+                </button>
+              </div>
+            )}
           </div>
 
           <nav className="space-y-1 mb-8">
@@ -133,7 +157,7 @@ export default function Dashboard() {
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
-                      <DropdownMenuItem onClick={() => setEditingWorker(worker)}>
+                      <DropdownMenuItem onClick={() => setLocation(`/workers/${worker.id}/edit`)}>
                         <Edit2 className="w-4 h-4 mr-2" /> Редактировать
                       </DropdownMenuItem>
                       <DropdownMenuItem 
@@ -150,7 +174,14 @@ export default function Dashboard() {
           </div>
 
           <div className="pt-4 border-t border-border mt-4">
-            <CreateWorkerDialog />
+            <Button 
+              variant="ghost"
+              className="w-full justify-start text-muted-foreground hover:text-foreground"
+              onClick={() => setLocation("/workers/new")}
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              Добавить сотрудника
+            </Button>
           </div>
         </aside>
 
@@ -223,7 +254,7 @@ export default function Dashboard() {
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
-                          <DropdownMenuItem onClick={() => setEditingTask(task)}>
+                          <DropdownMenuItem onClick={() => setLocation(`/tasks/${task.id}/edit`)}>
                             <Edit2 className="w-4 h-4 mr-2" /> Редактировать
                           </DropdownMenuItem>
                           <DropdownMenuItem 
@@ -241,27 +272,16 @@ export default function Dashboard() {
             </div>
 
             {/* Add Task */}
-            <CreateTaskDialog />
+            <button
+              onClick={() => setLocation("/tasks/new")}
+              className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-muted-foreground hover:bg-muted/50 transition-colors text-left"
+            >
+              <Plus className="w-5 h-5" />
+              <span className="text-sm">Новая задача</span>
+            </button>
           </div>
         </main>
       </div>
-
-      {/* Edit Dialogs */}
-      {editingWorker && (
-        <EditWorkerDialog 
-          worker={editingWorker} 
-          open={!!editingWorker} 
-          onOpenChange={(open) => !open && setEditingWorker(null)} 
-        />
-      )}
-
-      {editingTask && (
-        <EditTaskDialog 
-          task={editingTask} 
-          open={!!editingTask} 
-          onOpenChange={(open) => !open && setEditingTask(null)} 
-        />
-      )}
     </div>
   );
 }

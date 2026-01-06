@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { insertWorkerSchema, insertTaskSchema, workers, tasks } from './schema';
+import { insertWorkerSchema, insertTaskSchema, insertUserSchema, loginSchema, workers, tasks, users } from './schema';
 
 export const errorSchemas = {
   validation: z.object({
@@ -12,6 +12,40 @@ export const errorSchemas = {
 };
 
 export const api = {
+  auth: {
+    register: {
+      method: 'POST' as const,
+      path: '/api/auth/register',
+      input: insertUserSchema,
+      responses: {
+        201: z.custom<Omit<typeof users.$inferSelect, "password">>(),
+        400: errorSchemas.validation,
+      },
+    },
+    login: {
+      method: 'POST' as const,
+      path: '/api/auth/login',
+      input: loginSchema,
+      responses: {
+        200: z.custom<Omit<typeof users.$inferSelect, "password">>(),
+        401: errorSchemas.validation,
+      },
+    },
+    me: {
+      method: 'GET' as const,
+      path: '/api/auth/me',
+      responses: {
+        200: z.custom<Omit<typeof users.$inferSelect, "password">>().nullable(),
+      },
+    },
+    logout: {
+      method: 'POST' as const,
+      path: '/api/auth/logout',
+      responses: {
+        200: z.object({ success: z.boolean() }),
+      },
+    },
+  },
   workers: {
     list: {
       method: 'GET' as const,

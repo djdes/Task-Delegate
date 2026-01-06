@@ -1,8 +1,14 @@
-import { workers, tasks, type Worker, type InsertWorker, type Task, type InsertTask } from "@shared/schema";
+import { workers, tasks, users, type Worker, type InsertWorker, type Task, type InsertTask, type User, type InsertUser } from "@shared/schema";
 import { db } from "./db";
 import { eq } from "drizzle-orm";
+import bcrypt from "bcrypt";
 
 export interface IStorage {
+  // Users
+  getUserByEmail(email: string): Promise<User | undefined>;
+  createUser(user: InsertUser): Promise<Omit<User, "password">>;
+  getUserById(id: number): Promise<Omit<User, "password"> | undefined>;
+
   getWorkers(): Promise<Worker[]>;
   getWorker(id: number): Promise<Worker | undefined>;
   createWorker(worker: InsertWorker): Promise<Worker>;
@@ -17,6 +23,38 @@ export interface IStorage {
 }
 
 export class DatabaseStorage implements IStorage {
+  async getUserByEmail(email: string): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.email, email));
+    return user || undefined;
+  }
+
+  async createUser(insertUser: InsertUser): Promise<Omit<User, "password">> {
+    const hashedPassword = await bcrypt.hash(insertUser.password, 10);
+    const [result] = await db.insert(users).values({
+      ...insertUser,
+      password: hashedPassword,
+      createdAt: Math.floor(Date.now() / 1000),
+    });
+    const insertId = (result as any).insertId;
+    const [user] = await db.select({
+      id: users.id,
+      email: users.email,
+      name: users.name,
+      createdAt: users.createdAt,
+    }).from(users).where(eq(users.id, insertId));
+    return user;
+  }
+
+  async getUserById(id: number): Promise<Omit<User, "password"> | undefined> {
+    const [user] = await db.select({
+      id: users.id,
+      email: users.email,
+      name: users.name,
+      createdAt: users.createdAt,
+    }).from(users).where(eq(users.id, id));
+    return user || undefined;
+  }
+
   async getWorkers(): Promise<Worker[]> {
     return await db.select().from(workers);
   }
