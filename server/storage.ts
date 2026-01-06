@@ -1,10 +1,7 @@
-import { users, type User, type InsertUser, workers, type Worker, type InsertWorker, tasks, type Task, type InsertTask } from "@shared/schema";
+import { getSupabase } from "./supabase";
+import type { Worker, InsertWorker, Task, InsertTask } from "@shared/schema";
 
 export interface IStorage {
-  getUser(id: string): Promise<User | undefined>;
-  getUserByUsername(username: string): Promise<User | undefined>;
-  createUser(user: InsertUser): Promise<User>;
-
   getWorkers(): Promise<Worker[]>;
   getWorker(id: number): Promise<Worker | undefined>;
   createWorker(worker: InsertWorker): Promise<Worker>;
@@ -18,95 +15,171 @@ export interface IStorage {
   deleteTask(id: number): Promise<void>;
 }
 
-export class MemStorage implements IStorage {
-  private users: Map<string, User>;
-  private workers: Map<number, Worker>;
-  private tasks: Map<number, Task>;
-  private currentWorkerId: number;
-  private currentTaskId: number;
-
-  constructor() {
-    this.users = new Map();
-    this.workers = new Map();
-    this.tasks = new Map();
-    this.currentWorkerId = 1;
-    this.currentTaskId = 1;
-  }
-
-  async getUser(id: string): Promise<User | undefined> {
-    return this.users.get(id);
-  }
-
-  async getUserByUsername(username: string): Promise<User | undefined> {
-    return Array.from(this.users.values()).find(
-      (user) => user.username === username,
-    );
-  }
-
-  async createUser(insertUser: InsertUser): Promise<User> {
-    const id = (this.users.size + 1).toString(); // Simple ID generation
-    const user: User = { ...insertUser, id };
-    this.users.set(id, user);
-    return user;
+export class SupabaseStorage implements IStorage {
+  private get supabase() {
+    return getSupabase();
   }
 
   async getWorkers(): Promise<Worker[]> {
-    return Array.from(this.workers.values());
+    const { data, error } = await this.supabase
+      .from('workers')
+      .select('*')
+      .order('id', { ascending: true });
+    
+    if (error) {
+      console.error('Supabase error getting workers:', error);
+      throw new Error(`Database error: ${error.message}`);
+    }
+    return data || [];
   }
 
   async getWorker(id: number): Promise<Worker | undefined> {
-    return this.workers.get(id);
+    const { data, error } = await this.supabase
+      .from('workers')
+      .select('*')
+      .eq('id', id)
+      .single();
+    
+    if (error) {
+      if (error.code === 'PGRST116') return undefined;
+      console.error('Supabase error getting worker:', error);
+      return undefined;
+    }
+    return data;
   }
 
   async createWorker(insertWorker: InsertWorker): Promise<Worker> {
-    const id = this.currentWorkerId++;
-    const worker: Worker = { ...insertWorker, id };
-    this.workers.set(id, worker);
-    return worker;
+    const { data, error } = await this.supabase
+      .from('workers')
+      .insert({ name: insertWorker.name })
+      .select()
+      .single();
+    
+    if (error) {
+      console.error('Supabase error creating worker:', error);
+      throw new Error(`Database error: ${error.message}`);
+    }
+    return data;
   }
 
   async updateWorker(id: number, insertWorker: InsertWorker): Promise<Worker | undefined> {
-    if (!this.workers.has(id)) return undefined;
-    const worker = { ...insertWorker, id };
-    this.workers.set(id, worker);
-    return worker;
+    const { data, error } = await this.supabase
+      .from('workers')
+      .update({ name: insertWorker.name })
+      .eq('id', id)
+      .select()
+      .single();
+    
+    if (error) {
+      console.error('Supabase error updating worker:', error);
+      return undefined;
+    }
+    return data;
   }
 
   async deleteWorker(id: number): Promise<void> {
-    this.workers.delete(id);
-    // Also optional: nullify workerId in tasks or delete tasks? 
-    // For simplicity, let's keep tasks but set workerId to null if schema allowed it, 
-    // but schema says integer("worker_id").references(...) which usually implies it might not be null if not specified.
-    // In MemStorage we don't strictly enforce FKs unless we code it.
-    // Let's just delete the worker.
+    const { error } = await this.supabase
+      .from('workers')
+      .delete()
+      .eq('id', id);
+    
+    if (error) {
+      console.error('Supabase error deleting worker:', error);
+      throw new Error(`Database error: ${error.message}`);
+    }
   }
 
   async getTasks(): Promise<Task[]> {
-    return Array.from(this.tasks.values());
+    const { data, error } = await this.supabase
+      .from('tasks')
+      .select('*')
+      .order('id', { ascending: true });
+    
+    if (error) {
+      console.error('Supabase error getting tasks:', error);
+      throw new Error(`Database error: ${error.message}`);
+    }
+    return (data || []).map(task => ({
+      id: task.id,
+      title: task.title,
+      workerId: task.worker_id
+    }));
   }
 
   async getTask(id: number): Promise<Task | undefined> {
-    return this.tasks.get(id);
+    const { data, error } = await this.supabase
+      .from('tasks')
+      .select('*')
+      .eq('id', id)
+      .single();
+    
+    if (error) {
+      if (error.code === 'PGRST116') return undefined;
+      console.error('Supabase error getting task:', error);
+      return undefined;
+    }
+    return {
+      id: data.id,
+      title: data.title,
+      workerId: data.worker_id
+    };
   }
 
   async createTask(insertTask: InsertTask): Promise<Task> {
-    const id = this.currentTaskId++;
-    const task: Task = { ...insertTask, id };
-    this.tasks.set(id, task);
-    return task;
+    const { data, error } = await this.supabase
+      .from('tasks')
+      .insert({ 
+        title: insertTask.title, 
+        worker_id: insertTask.workerId || null 
+      })
+      .select()
+      .single();
+    
+    if (error) {
+      console.error('Supabase error creating task:', error);
+      throw new Error(`Database error: ${error.message}`);
+    }
+    return {
+      id: data.id,
+      title: data.title,
+      workerId: data.worker_id
+    };
   }
 
   async updateTask(id: number, updates: Partial<InsertTask>): Promise<Task | undefined> {
-    const existing = this.tasks.get(id);
-    if (!existing) return undefined;
-    const updated = { ...existing, ...updates };
-    this.tasks.set(id, updated);
-    return updated;
+    const updateData: Record<string, any> = {};
+    if (updates.title !== undefined) updateData.title = updates.title;
+    if (updates.workerId !== undefined) updateData.worker_id = updates.workerId;
+
+    const { data, error } = await this.supabase
+      .from('tasks')
+      .update(updateData)
+      .eq('id', id)
+      .select()
+      .single();
+    
+    if (error) {
+      console.error('Supabase error updating task:', error);
+      return undefined;
+    }
+    return {
+      id: data.id,
+      title: data.title,
+      workerId: data.worker_id
+    };
   }
 
   async deleteTask(id: number): Promise<void> {
-    this.tasks.delete(id);
+    const { error } = await this.supabase
+      .from('tasks')
+      .delete()
+      .eq('id', id);
+    
+    if (error) {
+      console.error('Supabase error deleting task:', error);
+      throw new Error(`Database error: ${error.message}`);
+    }
   }
 }
 
-export const storage = new MemStorage();
+export const storage = new SupabaseStorage();

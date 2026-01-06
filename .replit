@@ -37,3 +37,9 @@ author = "agent"
 task = "shell.exec"
 args = "npm run dev"
 waitForPort = 5000
+
+[userenv]
+
+[userenv.shared]
+NEXT_PUBLIC_SUPABASE_URL = "https://kwalofricgonrkmdyiko.supabase.co"
+NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY = "sb_publishable_E8yHHFJgVIBc1ntATbxyfQ_SV4lrwms"
