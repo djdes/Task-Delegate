@@ -44,3 +44,6 @@ waitForPort = 5000
 [userenv.shared]
 NEXT_PUBLIC_SUPABASE_URL = "https://kwalofricgonrkmdyiko.supabase.co"
 NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY = "sb_publishable_E8yHHFJgVIBc1ntATbxyfQ_SV4lrwms"
+
+[agent]
+integrations = ["javascript_database:1.0.0"]

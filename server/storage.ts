@@ -1,5 +1,6 @@
-import { getSupabase } from "./supabase";
-import type { Worker, InsertWorker, Task, InsertTask } from "@shared/schema";
+import { workers, tasks, type Worker, type InsertWorker, type Task, type InsertTask } from "@shared/schema";
+import { db } from "./db";
+import { eq } from "drizzle-orm";
 
 export interface IStorage {
   getWorkers(): Promise<Worker[]>;
@@ -15,171 +16,52 @@ export interface IStorage {
   deleteTask(id: number): Promise<void>;
 }
 
-export class SupabaseStorage implements IStorage {
-  private get supabase() {
-    return getSupabase();
-  }
-
+export class DatabaseStorage implements IStorage {
   async getWorkers(): Promise<Worker[]> {
-    const { data, error } = await this.supabase
-      .from('workers')
-      .select('*')
-      .order('id', { ascending: true });
-    
-    if (error) {
-      console.error('Supabase error getting workers:', error);
-      throw new Error(`Database error: ${error.message}`);
-    }
-    return data || [];
+    return await db.select().from(workers);
   }
 
   async getWorker(id: number): Promise<Worker | undefined> {
-    const { data, error } = await this.supabase
-      .from('workers')
-      .select('*')
-      .eq('id', id)
-      .single();
-    
-    if (error) {
-      if (error.code === 'PGRST116') return undefined;
-      console.error('Supabase error getting worker:', error);
-      return undefined;
-    }
-    return data;
+    const [worker] = await db.select().from(workers).where(eq(workers.id, id));
+    return worker || undefined;
   }
 
   async createWorker(insertWorker: InsertWorker): Promise<Worker> {
-    const { data, error } = await this.supabase
-      .from('workers')
-      .insert({ name: insertWorker.name })
-      .select()
-      .single();
-    
-    if (error) {
-      console.error('Supabase error creating worker:', error);
-      throw new Error(`Database error: ${error.message}`);
-    }
-    return data;
+    const [worker] = await db.insert(workers).values(insertWorker).returning();
+    return worker;
   }
 
   async updateWorker(id: number, insertWorker: InsertWorker): Promise<Worker | undefined> {
-    const { data, error } = await this.supabase
-      .from('workers')
-      .update({ name: insertWorker.name })
-      .eq('id', id)
-      .select()
-      .single();
-    
-    if (error) {
-      console.error('Supabase error updating worker:', error);
-      return undefined;
-    }
-    return data;
+    const [worker] = await db.update(workers).set(insertWorker).where(eq(workers.id, id)).returning();
+    return worker || undefined;
   }
 
   async deleteWorker(id: number): Promise<void> {
-    const { error } = await this.supabase
-      .from('workers')
-      .delete()
-      .eq('id', id);
-    
-    if (error) {
-      console.error('Supabase error deleting worker:', error);
-      throw new Error(`Database error: ${error.message}`);
-    }
+    await db.delete(workers).where(eq(workers.id, id));
   }
 
   async getTasks(): Promise<Task[]> {
-    const { data, error } = await this.supabase
-      .from('tasks')
-      .select('*')
-      .order('id', { ascending: true });
-    
-    if (error) {
-      console.error('Supabase error getting tasks:', error);
-      throw new Error(`Database error: ${error.message}`);
-    }
-    return (data || []).map(task => ({
-      id: task.id,
-      title: task.title,
-      workerId: task.worker_id
-    }));
+    return await db.select().from(tasks);
   }
 
   async getTask(id: number): Promise<Task | undefined> {
-    const { data, error } = await this.supabase
-      .from('tasks')
-      .select('*')
-      .eq('id', id)
-      .single();
-    
-    if (error) {
-      if (error.code === 'PGRST116') return undefined;
-      console.error('Supabase error getting task:', error);
-      return undefined;
-    }
-    return {
-      id: data.id,
-      title: data.title,
-      workerId: data.worker_id
-    };
+    const [task] = await db.select().from(tasks).where(eq(tasks.id, id));
+    return task || undefined;
   }
 
   async createTask(insertTask: InsertTask): Promise<Task> {
-    const { data, error } = await this.supabase
-      .from('tasks')
-      .insert({ 
-        title: insertTask.title, 
-        worker_id: insertTask.workerId || null 
-      })
-      .select()
-      .single();
-    
-    if (error) {
-      console.error('Supabase error creating task:', error);
-      throw new Error(`Database error: ${error.message}`);
-    }
-    return {
-      id: data.id,
-      title: data.title,
-      workerId: data.worker_id
-    };
+    const [task] = await db.insert(tasks).values(insertTask).returning();
+    return task;
   }
 
   async updateTask(id: number, updates: Partial<InsertTask>): Promise<Task | undefined> {
-    const updateData: Record<string, any> = {};
-    if (updates.title !== undefined) updateData.title = updates.title;
-    if (updates.workerId !== undefined) updateData.worker_id = updates.workerId;
-
-    const { data, error } = await this.supabase
-      .from('tasks')
-      .update(updateData)
-      .eq('id', id)
-      .select()
-      .single();
-    
-    if (error) {
-      console.error('Supabase error updating task:', error);
-      return undefined;
-    }
-    return {
-      id: data.id,
-      title: data.title,
-      workerId: data.worker_id
-    };
+    const [task] = await db.update(tasks).set(updates).where(eq(tasks.id, id)).returning();
+    return task || undefined;
   }
 
   async deleteTask(id: number): Promise<void> {
-    const { error } = await this.supabase
-      .from('tasks')
-      .delete()
-      .eq('id', id);
-    
-    if (error) {
-      console.error('Supabase error deleting task:', error);
-      throw new Error(`Database error: ${error.message}`);
-    }
+    await db.delete(tasks).where(eq(tasks.id, id));
   }
 }
 
-export const storage = new SupabaseStorage();
+export const storage = new DatabaseStorage();

@@ -4,11 +4,11 @@ import * as schema from "@shared/schema";
 
 const { Pool } = pg;
 
-// This file is required by the template but we are using MemStorage.
-// We'll export a dummy db connection if DATABASE_URL is not set to avoid crashing.
-// In a real DB scenario, we would throw if DATABASE_URL is missing.
+if (!process.env.DATABASE_URL) {
+  throw new Error(
+    "DATABASE_URL must be set. Did you forget to provision a database?",
+  );
+}
 
-export const pool = new Pool({ 
-  connectionString: process.env.DATABASE_URL || "postgres://dummy:dummy@localhost:5432/dummy" 
-});
+export const pool = new Pool({ connectionString: process.env.DATABASE_URL });
 export const db = drizzle(pool, { schema });
