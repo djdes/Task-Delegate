@@ -61,13 +61,6 @@ app.use((req, res, next) => {
 });
 
 (async () => {
-  // Initialize database tables
-  try {
-    await initializeDatabase();
-  } catch (error) {
-    console.error('Failed to initialize database:', error);
-  }
-
   await registerRoutes(httpServer, app);
 
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
