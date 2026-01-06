@@ -27,12 +27,15 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createWorker(insertWorker: InsertWorker): Promise<Worker> {
-    const [worker] = await db.insert(workers).values(insertWorker).returning();
+    const [result] = await db.insert(workers).values(insertWorker);
+    const insertId = (result as any).insertId;
+    const [worker] = await db.select().from(workers).where(eq(workers.id, insertId));
     return worker;
   }
 
   async updateWorker(id: number, insertWorker: InsertWorker): Promise<Worker | undefined> {
-    const [worker] = await db.update(workers).set(insertWorker).where(eq(workers.id, id)).returning();
+    await db.update(workers).set(insertWorker).where(eq(workers.id, id));
+    const [worker] = await db.select().from(workers).where(eq(workers.id, id));
     return worker || undefined;
   }
 
@@ -50,12 +53,15 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createTask(insertTask: InsertTask): Promise<Task> {
-    const [task] = await db.insert(tasks).values(insertTask).returning();
+    const [result] = await db.insert(tasks).values(insertTask);
+    const insertId = (result as any).insertId;
+    const [task] = await db.select().from(tasks).where(eq(tasks.id, insertId));
     return task;
   }
 
   async updateTask(id: number, updates: Partial<InsertTask>): Promise<Task | undefined> {
-    const [task] = await db.update(tasks).set(updates).where(eq(tasks.id, id)).returning();
+    await db.update(tasks).set(updates).where(eq(tasks.id, id));
+    const [task] = await db.select().from(tasks).where(eq(tasks.id, id));
     return task || undefined;
   }
 

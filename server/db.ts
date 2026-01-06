@@ -1,14 +1,25 @@
-import { drizzle } from "drizzle-orm/node-postgres";
-import pg from "pg";
+import { drizzle } from "drizzle-orm/mysql2";
+import mysql from "mysql2/promise";
 import * as schema from "@shared/schema";
 
-const { Pool } = pg;
+const host = process.env.MYSQL_HOST;
+const user = process.env.MYSQL_USER;
+const password = process.env.MYSQL_PASSWORD;
+const database = process.env.MYSQL_DATABASE;
 
-if (!process.env.DATABASE_URL) {
-  throw new Error(
-    "DATABASE_URL must be set. Did you forget to provision a database?",
-  );
+if (!host || !user || !password || !database) {
+  throw new Error("MySQL credentials not set. Check MYSQL_HOST, MYSQL_USER, MYSQL_PASSWORD, MYSQL_DATABASE");
 }
 
-export const pool = new Pool({ connectionString: process.env.DATABASE_URL });
-export const db = drizzle(pool, { schema });
+const pool = mysql.createPool({
+  host,
+  user,
+  password,
+  database,
+  port: 3306,
+  waitForConnections: true,
+  connectionLimit: 10,
+});
+
+export const db = drizzle(pool, { schema, mode: "default" });
+export { pool };

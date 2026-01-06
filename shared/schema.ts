@@ -1,16 +1,16 @@
-import { pgTable, text, serial, integer } from "drizzle-orm/pg-core";
+import { mysqlTable, varchar, int, serial } from "drizzle-orm/mysql-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
-export const workers = pgTable("workers", {
+export const workers = mysqlTable("workers", {
   id: serial("id").primaryKey(),
-  name: text("name").notNull(),
+  name: varchar("name", { length: 255 }).notNull(),
 });
 
-export const tasks = pgTable("tasks", {
+export const tasks = mysqlTable("tasks", {
   id: serial("id").primaryKey(),
-  title: text("title").notNull(),
-  workerId: integer("worker_id").references(() => workers.id),
+  title: varchar("title", { length: 255 }).notNull(),
+  workerId: int("worker_id"),
 });
 
 export const insertWorkerSchema = createInsertSchema(workers).pick({
