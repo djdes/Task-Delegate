@@ -5,7 +5,7 @@ import { useUsers } from "@/hooks/use-users";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Calendar, RefreshCw, Copy } from "lucide-react";
+import { Calendar, RefreshCw, Copy, CalendarDays } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
@@ -37,6 +37,7 @@ const formSchema = insertTaskSchema.extend({
   workerId: z.string().optional().transform(val => val ? parseInt(val, 10) : undefined),
   requiresPhoto: z.boolean().optional().default(false),
   weekDays: z.array(z.number()).nullable().optional(),
+  monthDay: z.string().optional().transform(val => val ? parseInt(val, 10) : null),
   isRecurring: z.boolean().optional().default(true),
 });
 
@@ -58,6 +59,7 @@ interface Task {
   workerId: number | null;
   requiresPhoto: boolean;
   weekDays?: number[] | null;
+  monthDay?: number | null;
   isRecurring?: boolean;
 }
 
@@ -80,6 +82,7 @@ export function DuplicateTaskDialog({ task, open, onOpenChange }: DuplicateTaskD
       workerId: undefined,
       requiresPhoto: false,
       weekDays: null,
+      monthDay: undefined,
       isRecurring: true,
     },
   });
@@ -100,6 +103,7 @@ export function DuplicateTaskDialog({ task, open, onOpenChange }: DuplicateTaskD
         workerId: task.workerId ? task.workerId.toString() : undefined,
         requiresPhoto: task.requiresPhoto ?? false,
         weekDays: weekDaysArray,
+        monthDay: task.monthDay ? task.monthDay.toString() : undefined,
         isRecurring: task.isRecurring ?? true,
       });
     }
@@ -111,6 +115,7 @@ export function DuplicateTaskDialog({ task, open, onOpenChange }: DuplicateTaskD
       workerId: values.workerId,
       requiresPhoto: values.requiresPhoto ?? false,
       weekDays: values.weekDays && values.weekDays.length > 0 ? values.weekDays : null,
+      monthDay: values.monthDay || null,
       isRecurring: values.isRecurring ?? true,
     };
     createTask.mutate(taskData as any, {
@@ -244,6 +249,38 @@ export function DuplicateTaskDialog({ task, open, onOpenChange }: DuplicateTaskD
                       );
                     })}
                   </div>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="monthDay"
+              render={({ field }) => (
+                <FormItem className="rounded-md border border-border/50 p-3">
+                  <div className="flex items-center gap-2 mb-2">
+                    <CalendarDays className="w-4 h-4 text-muted-foreground" />
+                    <FormLabel className="text-sm font-medium">День месяца</FormLabel>
+                  </div>
+                  <Select
+                    onValueChange={(val) => field.onChange(val === "none" ? undefined : val)}
+                    value={field.value?.toString() || "none"}
+                  >
+                    <FormControl>
+                      <SelectTrigger className="things-input w-full">
+                        <SelectValue placeholder="Не указан" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="none">Не указан</SelectItem>
+                      {Array.from({ length: 31 }, (_, i) => i + 1).map((day) => (
+                        <SelectItem key={day} value={day.toString()}>
+                          {day} день
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                   <FormMessage />
                 </FormItem>
               )}

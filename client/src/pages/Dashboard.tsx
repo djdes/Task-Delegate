@@ -19,6 +19,7 @@ import {
   Inbox,
   Filter,
   Calendar,
+  CalendarDays,
   Copy
 } from "lucide-react";
 import {
@@ -124,16 +125,29 @@ export default function Dashboard() {
 
   // Получаем текущий день недели (0 = воскресенье, 1 = понедельник, ...)
   const currentDayOfWeek = new Date().getDay();
+  // Получаем текущий день месяца (1-31)
+  const currentDayOfMonth = new Date().getDate();
 
   // Функция проверки, должна ли задача показываться сегодня
   const isTaskVisibleToday = (task: typeof tasks[0]) => {
-    // Если weekDays не задан или пустой - задача видна всегда
     const weekDays = (task as any).weekDays;
-    if (!weekDays || !Array.isArray(weekDays) || weekDays.length === 0) {
-      return true;
+    const monthDay = (task as any).monthDay;
+
+    // Проверяем день месяца (если указан)
+    if (monthDay !== null && monthDay !== undefined) {
+      if (monthDay !== currentDayOfMonth) {
+        return false;
+      }
     }
-    // Проверяем, есть ли текущий день в списке
-    return weekDays.includes(currentDayOfWeek);
+
+    // Проверяем день недели (если указан)
+    if (weekDays && Array.isArray(weekDays) && weekDays.length > 0) {
+      if (!weekDays.includes(currentDayOfWeek)) {
+        return false;
+      }
+    }
+
+    return true;
   };
 
   // Фильтруем задачи: для обычных пользователей показываем только их задачи
@@ -444,6 +458,14 @@ export default function Dashboard() {
                                 .sort((a, b) => (a === 0 ? 7 : a) - (b === 0 ? 7 : b))
                                 .map(d => WEEK_DAY_SHORT_NAMES[d])
                                 .join(", ")}
+                            </p>
+                          </div>
+                        )}
+                        {user?.isAdmin && (task as any).monthDay && (
+                          <div className="flex items-center gap-1.5 mt-1.5">
+                            <CalendarDays className="w-3 h-3 text-muted-foreground" />
+                            <p className="text-xs text-muted-foreground">
+                              {(task as any).monthDay} день месяца
                             </p>
                           </div>
                         )}

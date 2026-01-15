@@ -5,7 +5,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
-import { ArrowLeft, User, Plus, Calendar, RefreshCw } from "lucide-react";
+import { ArrowLeft, User, Plus, Calendar, RefreshCw, CalendarDays } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
@@ -31,6 +31,7 @@ const formSchema = insertTaskSchema.extend({
   workerId: z.string().optional().transform(val => val ? parseInt(val, 10) : undefined),
   requiresPhoto: z.boolean().optional().default(false),
   weekDays: z.array(z.number()).nullable().optional(),
+  monthDay: z.string().optional().transform(val => val ? parseInt(val, 10) : null),
   isRecurring: z.boolean().optional().default(true),
 });
 
@@ -78,6 +79,7 @@ export default function CreateTask() {
       workerId: undefined,
       requiresPhoto: false,
       weekDays: null,
+      monthDay: undefined,
       isRecurring: true,
     },
   });
@@ -88,6 +90,7 @@ export default function CreateTask() {
       workerId: values.workerId,
       requiresPhoto: values.requiresPhoto ?? false,
       weekDays: values.weekDays && values.weekDays.length > 0 ? values.weekDays : null,
+      monthDay: values.monthDay || null,
       isRecurring: values.isRecurring ?? true,
     };
     createTask.mutate(taskData as any, {
@@ -245,6 +248,41 @@ export default function CreateTask() {
                       );
                     })}
                   </div>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="monthDay"
+              render={({ field }) => (
+                <FormItem className="rounded-md border border-border/50 p-4">
+                  <div className="flex items-center gap-2 mb-3">
+                    <CalendarDays className="w-4 h-4 text-muted-foreground" />
+                    <FormLabel className="text-sm font-medium">День месяца</FormLabel>
+                  </div>
+                  <p className="text-xs text-muted-foreground mb-3">
+                    Укажите день месяца (1-31), когда задача будет показываться. Если не указано - задача видна всегда.
+                  </p>
+                  <Select
+                    onValueChange={(val) => field.onChange(val === "none" ? undefined : val)}
+                    value={field.value?.toString() || "none"}
+                  >
+                    <FormControl>
+                      <SelectTrigger className="things-input w-full">
+                        <SelectValue placeholder="Не указан" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="none">Не указан</SelectItem>
+                      {Array.from({ length: 31 }, (_, i) => i + 1).map((day) => (
+                        <SelectItem key={day} value={day.toString()}>
+                          {day} день
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                   <FormMessage />
                 </FormItem>
               )}

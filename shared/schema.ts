@@ -23,6 +23,7 @@ export const tasks = mysqlTable("tasks", {
   photoUrl: varchar("photo_url", { length: 500 }),
   isCompleted: boolean("is_completed").notNull().default(false),
   weekDays: varchar("week_days", { length: 20 }), // JSON массив дней: [0,1,2,3,4,5,6] где 0=Вс, 1=Пн, ..., 6=Сб
+  monthDay: int("month_day"), // День месяца (1-31) для отображения задачи
   isRecurring: boolean("is_recurring").notNull().default(true), // Повторяющаяся задача (сбрасывается каждый день)
 });
 
@@ -62,6 +63,7 @@ export const insertTaskSchema = createInsertSchema(tasks).pick({
   photoUrl: z.string().nullable().optional(),
   isCompleted: z.boolean().optional().default(false),
   weekDays: z.array(z.number().min(0).max(6)).nullable().optional(), // массив дней недели [0-6]
+  monthDay: z.number().min(1).max(31).nullable().optional(), // день месяца (1-31)
   isRecurring: z.boolean().optional().default(true), // повторяющаяся задача
 });
 

@@ -88,6 +88,7 @@ export class DatabaseStorage implements IStorage {
       photoUrl: tasks.photoUrl,
       isCompleted: tasks.isCompleted,
       weekDays: tasks.weekDays,
+      monthDay: tasks.monthDay,
       isRecurring: tasks.isRecurring,
     }).from(tasks);
     // Парсим weekDays из JSON строки в массив
@@ -106,6 +107,7 @@ export class DatabaseStorage implements IStorage {
       photoUrl: tasks.photoUrl,
       isCompleted: tasks.isCompleted,
       weekDays: tasks.weekDays,
+      monthDay: tasks.monthDay,
       isRecurring: tasks.isRecurring,
     }).from(tasks).where(eq(tasks.id, id));
     if (!task) return undefined;
@@ -120,6 +122,7 @@ export class DatabaseStorage implements IStorage {
     const taskData = {
       ...insertTask,
       weekDays: insertTask.weekDays ? JSON.stringify(insertTask.weekDays) : null,
+      monthDay: insertTask.monthDay ?? null,
       isRecurring: insertTask.isRecurring ?? true,
     };
     const [result] = await db.insert(tasks).values(taskData as any);
@@ -132,6 +135,7 @@ export class DatabaseStorage implements IStorage {
       photoUrl: tasks.photoUrl,
       isCompleted: tasks.isCompleted,
       weekDays: tasks.weekDays,
+      monthDay: tasks.monthDay,
       isRecurring: tasks.isRecurring,
     }).from(tasks).where(eq(tasks.id, insertId));
     return {
@@ -163,6 +167,7 @@ export class DatabaseStorage implements IStorage {
       photoUrl: tasks.photoUrl,
       isCompleted: tasks.isCompleted,
       weekDays: tasks.weekDays,
+      monthDay: tasks.monthDay,
       isRecurring: tasks.isRecurring,
     }).from(tasks).where(eq(tasks.id, id));
     if (!task) return undefined;

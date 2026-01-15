@@ -46,6 +46,11 @@ async function updateTasksTable() {
       ADD COLUMN IF NOT EXISTS \`is_recurring\` tinyint(1) NOT NULL DEFAULT 1
     `).catch(() => {}); // Игнорируем ошибку если колонка уже существует
 
+    await connection.execute(`
+      ALTER TABLE \`tasks\`
+      ADD COLUMN IF NOT EXISTS \`month_day\` int NULL
+    `).catch(() => {}); // Игнорируем ошибку если колонка уже существует
+
     console.log("Таблица tasks обновлена");
   } catch (error) {
     console.error("Ошибка:", error);
