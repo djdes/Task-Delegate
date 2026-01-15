@@ -13,21 +13,12 @@ export const errorSchemas = {
 
 export const api = {
   auth: {
-    register: {
-      method: 'POST' as const,
-      path: '/api/auth/register',
-      input: insertUserSchema,
-      responses: {
-        201: z.custom<Omit<typeof users.$inferSelect, "password">>(),
-        400: errorSchemas.validation,
-      },
-    },
     login: {
       method: 'POST' as const,
       path: '/api/auth/login',
       input: loginSchema,
       responses: {
-        200: z.custom<Omit<typeof users.$inferSelect, "password">>(),
+        200: z.custom<typeof users.$inferSelect>(),
         401: errorSchemas.validation,
       },
     },
@@ -35,7 +26,7 @@ export const api = {
       method: 'GET' as const,
       path: '/api/auth/me',
       responses: {
-        200: z.custom<Omit<typeof users.$inferSelect, "password">>().nullable(),
+        200: z.custom<typeof users.$inferSelect>().nullable(),
       },
     },
     logout: {
@@ -43,6 +34,24 @@ export const api = {
       path: '/api/auth/logout',
       responses: {
         200: z.object({ success: z.boolean() }),
+      },
+    },
+  },
+  users: {
+    list: {
+      method: 'GET' as const,
+      path: '/api/users',
+      responses: {
+        200: z.array(z.custom<typeof users.$inferSelect>()),
+      },
+    },
+    create: {
+      method: 'POST' as const,
+      path: '/api/users',
+      input: insertUserSchema,
+      responses: {
+        201: z.custom<typeof users.$inferSelect>(),
+        400: errorSchemas.validation,
       },
     },
   },
@@ -130,6 +139,26 @@ export const api = {
       path: '/api/tasks/:id',
       responses: {
         204: z.void(),
+        404: errorSchemas.notFound,
+      },
+    },
+    complete: {
+      method: 'POST' as const,
+      path: '/api/tasks/:id/complete',
+      responses: {
+        200: z.custom<typeof tasks.$inferSelect>(),
+        400: errorSchemas.validation,
+        403: errorSchemas.validation,
+        404: errorSchemas.notFound,
+      },
+    },
+    uploadPhoto: {
+      method: 'POST' as const,
+      path: '/api/tasks/:id/photo',
+      responses: {
+        200: z.object({ photoUrl: z.string() }),
+        400: errorSchemas.validation,
+        403: errorSchemas.validation,
         404: errorSchemas.notFound,
       },
     },

@@ -8,7 +8,11 @@
     "build": "tsx script/build.ts",
     "start": "cross-env NODE_ENV=production node dist/index.cjs",
     "check": "tsc",
-    "db:push": "drizzle-kit push"
+    "db:push": "drizzle-kit push",
+    "create-admin": "tsx script/create-admin.ts",
+    "setup-db": "tsx script/create-tables.ts",
+    "update-tasks": "tsx script/update-tasks-table.ts",
+    "reset-tasks": "tsx script/reset-recurring-tasks.ts"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",
@@ -43,6 +47,7 @@
     "@supabase/supabase-js": "^2.89.0",
     "@tanstack/react-query": "^5.60.5",
     "@types/bcrypt": "^6.0.0",
+    "@types/multer": "^2.0.0",
     "bcrypt": "^6.0.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
@@ -59,6 +64,7 @@
     "input-otp": "^1.4.2",
     "lucide-react": "^0.453.0",
     "memorystore": "^1.6.7",
+    "multer": "^2.0.2",
     "mysql2": "^3.16.0",
     "next-themes": "^0.4.6",
     "passport": "^0.7.0",

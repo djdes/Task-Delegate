@@ -3,7 +3,7 @@ import { useParams, useLocation } from "wouter";
 import { useUpdateWorker, useWorker } from "@/hooks/use-workers";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Edit } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
@@ -64,7 +64,7 @@ export default function EditWorker() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-muted/10 to-background">
         <div className="flex flex-col items-center gap-3">
           <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
           <span className="text-sm text-muted-foreground">Загрузка...</span>
@@ -75,12 +75,12 @@ export default function EditWorker() {
 
   if (!worker) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="text-center">
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-muted/10 to-background">
+        <div className="text-center bg-card/80 backdrop-blur-sm rounded-2xl border border-border/50 shadow-xl p-8">
           <h1 className="text-2xl font-semibold mb-2">Сотрудник не найден</h1>
           <button
             onClick={() => setLocation("/")}
-            className="text-primary hover:underline"
+            className="text-primary hover:text-primary/80 transition-colors"
           >
             Вернуться на главную
           </button>
@@ -90,21 +90,28 @@ export default function EditWorker() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-gradient-to-br from-background via-muted/10 to-background">
       <div className="max-w-2xl mx-auto p-8">
         <div className="mb-8">
           <button
             onClick={() => setLocation("/")}
-            className="flex items-center gap-2 text-muted-foreground hover:text-foreground mb-4"
+            className="flex items-center gap-2 text-muted-foreground hover:text-foreground mb-6 transition-colors group"
           >
-            <ArrowLeft className="w-4 h-4" />
+            <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
             Назад
           </button>
-          <h1 className="text-3xl font-semibold text-foreground">Редактировать сотрудника</h1>
+          <div className="flex items-center gap-3 mb-2">
+            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center shadow-lg shadow-primary/20">
+              <Edit className="w-6 h-6 text-primary-foreground" />
+            </div>
+            <h1 className="text-3xl font-bold bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">Редактировать сотрудника</h1>
+          </div>
+          <p className="text-muted-foreground text-sm ml-[60px]">Измените информацию о сотруднике</p>
         </div>
 
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+        <div className="bg-card/80 backdrop-blur-sm rounded-2xl border border-border/50 shadow-xl p-8">
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
             <FormField
               control={form.control}
               name="name"
@@ -122,25 +129,26 @@ export default function EditWorker() {
               )}
             />
             
-            <div className="flex gap-4">
-              <Button 
-                type="button" 
-                variant="ghost"
-                onClick={() => setLocation("/")}
-                className="flex-1"
-              >
-                Отмена
-              </Button>
-              <Button 
-                type="submit" 
-                disabled={updateWorker.isPending}
-                className="flex-1"
-              >
-                {updateWorker.isPending ? "Сохранение..." : "Сохранить"}
-              </Button>
-            </div>
-          </form>
-        </Form>
+              <div className="flex gap-4 pt-4">
+                <Button 
+                  type="button" 
+                  variant="ghost"
+                  onClick={() => setLocation("/")}
+                  className="flex-1 border border-border/50"
+                >
+                  Отмена
+                </Button>
+                <Button 
+                  type="submit" 
+                  disabled={updateWorker.isPending}
+                  className="flex-1 bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary shadow-lg hover:shadow-xl transition-all"
+                >
+                  {updateWorker.isPending ? "Сохранение..." : "Сохранить"}
+                </Button>
+              </div>
+            </form>
+          </Form>
+        </div>
       </div>
     </div>
   );

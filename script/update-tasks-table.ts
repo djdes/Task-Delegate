@@ -1,0 +1,59 @@
+import "dotenv/config";
+import mysql from "mysql2/promise";
+
+async function updateTasksTable() {
+  const host = process.env.MYSQL_HOST;
+  const user = process.env.MYSQL_USER;
+  const password = process.env.MYSQL_PASSWORD;
+  const database = process.env.MYSQL_DATABASE;
+
+  if (!host || !user || !password || !database) {
+    throw new Error("MySQL credentials not set");
+  }
+
+  const connection = await mysql.createConnection({
+    host,
+    user,
+    password,
+    database,
+    port: 3306,
+  });
+
+  try {
+    // Добавляем поля если их нет
+    await connection.execute(`
+      ALTER TABLE \`tasks\` 
+      ADD COLUMN IF NOT EXISTS \`requires_photo\` tinyint(1) NOT NULL DEFAULT 0
+    `).catch(() => {}); // Игнорируем ошибку если колонка уже существует
+
+    await connection.execute(`
+      ALTER TABLE \`tasks\` 
+      ADD COLUMN IF NOT EXISTS \`photo_url\` varchar(500) NULL
+    `).catch(() => {}); // Игнорируем ошибку если колонка уже существует
+
+    await connection.execute(`
+      ALTER TABLE \`tasks\`
+      ADD COLUMN IF NOT EXISTS \`is_completed\` tinyint(1) NOT NULL DEFAULT 0
+    `).catch(() => {}); // Игнорируем ошибку если колонка уже существует
+
+    await connection.execute(`
+      ALTER TABLE \`tasks\`
+      ADD COLUMN IF NOT EXISTS \`week_days\` varchar(20) NULL
+    `).catch(() => {}); // Игнорируем ошибку если колонка уже существует
+
+    await connection.execute(`
+      ALTER TABLE \`tasks\`
+      ADD COLUMN IF NOT EXISTS \`is_recurring\` tinyint(1) NOT NULL DEFAULT 1
+    `).catch(() => {}); // Игнорируем ошибку если колонка уже существует
+
+    console.log("Таблица tasks обновлена");
+  } catch (error) {
+    console.error("Ошибка:", error);
+    process.exit(1);
+  } finally {
+    await connection.end();
+    process.exit(0);
+  }
+}
+
+updateTasksTable();

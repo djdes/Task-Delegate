@@ -23,7 +23,8 @@ export function useTask(id: number) {
       const res = await fetch(url, { credentials: "include" });
       if (res.status === 404) return null;
       if (!res.ok) throw new Error("Failed to fetch task");
-      return api.tasks.get.responses[200].parse(await res.json());
+      // Не используем parse чтобы сохранить weekDays как массив
+      return await res.json();
     },
   });
 }
@@ -37,10 +38,14 @@ export function useCreateTask() {
       // Coerce workerId to number if it comes from a string select value
       const payload = {
         ...data,
-        workerId: data.workerId ? Number(data.workerId) : undefined
+        workerId: data.workerId ? Number(data.workerId) : undefined,
+        requiresPhoto: data.requiresPhoto !== undefined ? Boolean(data.requiresPhoto) : false,
+        weekDays: data.weekDays || null,
       };
-      
+
+      console.log("useCreateTask - payload:", payload);
       const validated = api.tasks.create.input.parse(payload);
+      console.log("useCreateTask - validated:", validated);
       
       const res = await fetch(api.tasks.create.path, {
         method: api.tasks.create.method,
@@ -77,10 +82,13 @@ export function useUpdateTask() {
       // Coerce workerId if present
       const payload = {
         ...updates,
-        workerId: updates.workerId ? Number(updates.workerId) : updates.workerId
+        workerId: updates.workerId ? Number(updates.workerId) : updates.workerId,
+        weekDays: updates.weekDays !== undefined ? updates.weekDays : undefined,
       };
 
+      console.log("useUpdateTask - payload:", payload);
       const validated = api.tasks.update.input.parse(payload);
+      console.log("useUpdateTask - validated:", validated);
       const url = buildUrl(api.tasks.update.path, { id });
       
       const res = await fetch(url, {
@@ -122,6 +130,77 @@ export function useDeleteTask() {
     },
     onError: (error) => {
       toast({ title: "Error", description: error.message, variant: "destructive" });
+    },
+  });
+}
+
+export function useCompleteTask() {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: async (id: number) => {
+      const res = await fetch(buildUrl(api.tasks.complete.path, { id }), {
+        method: api.tasks.complete.method,
+        credentials: "include",
+      });
+      if (!res.ok) {
+        const error = await res.json().catch(() => ({}));
+        throw new Error(error.message || "Не удалось завершить задачу");
+      }
+      return api.tasks.complete.responses[200].parse(await res.json());
+    },
+    onSuccess: (task) => {
+      queryClient.invalidateQueries({ queryKey: [api.tasks.list.path] });
+      queryClient.invalidateQueries({ queryKey: [api.tasks.get.path, task.id] });
+      toast({ title: "Готово", description: "Задача отмечена выполненной" });
+    },
+    onError: (error: any) => {
+      toast({ title: "Ошибка", description: error.message || "Не удалось завершить задачу", variant: "destructive" });
+    },
+  });
+}
+
+export function useUncompleteTask() {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: async (id: number) => {
+      const res = await fetch(`/api/tasks/${id}/uncomplete`, {
+        method: "POST",
+        credentials: "include",
+        headers: {
+          "Accept": "application/json",
+        },
+      });
+
+      const text = await res.text();
+      let data: any = {};
+
+      if (text) {
+        try {
+          data = JSON.parse(text);
+        } catch {
+          // Если не JSON, игнорируем
+        }
+      }
+
+      if (!res.ok) {
+        throw new Error(data.message || "Не удалось вернуть задачу");
+      }
+
+      return data;
+    },
+    onSuccess: (task) => {
+      queryClient.invalidateQueries({ queryKey: [api.tasks.list.path] });
+      if (task?.id) {
+        queryClient.invalidateQueries({ queryKey: [api.tasks.get.path, task.id] });
+      }
+      toast({ title: "Готово", description: "Задача возвращена в работу" });
+    },
+    onError: (error: any) => {
+      toast({ title: "Ошибка", description: error.message || "Не удалось вернуть задачу", variant: "destructive" });
     },
   });
 }

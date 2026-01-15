@@ -4,16 +4,16 @@ import { api } from "@shared/routes";
 
 type User = {
   id: number;
-  email: string;
+  phone: string;
   name?: string | null;
+  isAdmin: boolean;
   createdAt: number;
 } | null;
 
 interface AuthContextType {
   user: User;
   isLoading: boolean;
-  login: (email: string, password: string) => Promise<void>;
-  register: (email: string, password: string, name?: string) => Promise<void>;
+  login: (phone: string) => Promise<void>;
   logout: () => Promise<void>;
 }
 
@@ -39,12 +39,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   // Мутация для логина
   const loginMutation = useMutation({
-    mutationFn: async ({ email, password }: { email: string; password: string }) => {
+    mutationFn: async ({ phone }: { phone: string }) => {
       const response = await fetch(api.auth.login.path, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ phone }),
       });
       if (!response.ok) {
         const error = await response.json();
@@ -54,26 +54,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["auth", "me"] });
-    },
-  });
-
-  // Мутация для регистрации
-  const registerMutation = useMutation({
-    mutationFn: async ({ email, password, name }: { email: string; password: string; name?: string }) => {
-      const response = await fetch(api.auth.register.path, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify({ email, password, name }),
-      });
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || "Ошибка регистрации");
-      }
-      return response.json();
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["auth", "me"] });
+      // Обновляем задачи после авторизации
+      queryClient.invalidateQueries({ queryKey: ["/api/tasks"] });
     },
   });
 
@@ -91,15 +73,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     },
     onSuccess: () => {
       queryClient.setQueryData(["auth", "me"], null);
+      // Очищаем кэш задач при выходе
+      queryClient.removeQueries({ queryKey: ["/api/tasks"] });
     },
   });
 
-  const login = async (email: string, password: string) => {
-    await loginMutation.mutateAsync({ email, password });
-  };
-
-  const register = async (email: string, password: string, name?: string) => {
-    await registerMutation.mutateAsync({ email, password, name });
+  const login = async (phone: string) => {
+    await loginMutation.mutateAsync({ phone });
   };
 
   const logout = async () => {
@@ -112,7 +92,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         user,
         isLoading,
         login,
-        register,
         logout,
       }}
     >

@@ -102,9 +102,10 @@
   }
   
   .things-input {
-    @apply h-10 px-3 rounded-lg border border-border bg-background
+    @apply h-10 px-4 rounded-lg border border-border bg-background
            focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary
-           transition-all duration-150 placeholder:text-muted-foreground;
+           transition-all duration-200 placeholder:text-muted-foreground
+           hover:border-primary/50 shadow-sm hover:shadow-md;
   }
 
   .things-checkbox {
@@ -125,23 +126,23 @@
   }
 
   .things-list-item {
-    @apply flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors duration-150;
+    @apply flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200;
   }
   
   .things-list-item:hover {
-    @apply bg-muted/50;
+    @apply bg-muted/70 shadow-sm;
   }
 
   .things-sidebar-item {
-    @apply flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors duration-150;
+    @apply flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200;
   }
   
   .things-sidebar-item:hover {
-    @apply bg-muted;
+    @apply bg-muted/70 transform translate-x-1;
   }
   
   .things-sidebar-item.active {
-    @apply bg-primary/10 text-primary;
+    @apply bg-gradient-to-r from-primary/15 to-primary/5 text-primary border-l-2 border-primary shadow-sm;
   }
 
   .things-badge {
@@ -158,10 +159,38 @@
 
 @layer utilities {
   .hover-elevate {
-    @apply hover:bg-black/5 dark:hover:bg-white/5;
+    @apply hover:bg-black/5 dark:hover:bg-white/5 transition-all duration-200;
   }
   
   .active-elevate-2 {
-    @apply active:bg-black/10 dark:active:bg-white/10;
+    @apply active:bg-black/10 dark:active:bg-white/10 transition-all duration-150;
+  }
+
+  .animate-fade-in {
+    animation: fadeIn 0.3s ease-in-out;
+  }
+
+  .animate-slide-up {
+    animation: slideUp 0.3s ease-out;
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
 }

@@ -1,12 +1,12 @@
-import { mysqlTable, varchar, int } from "drizzle-orm/mysql-core";
+import { mysqlTable, varchar, int, boolean } from "drizzle-orm/mysql-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
 export const users = mysqlTable("users", {
   id: int("id").primaryKey().autoincrement(),
-  email: varchar("email", { length: 255 }).notNull().unique(),
-  password: varchar("password", { length: 255 }).notNull(),
+  phone: varchar("phone", { length: 20 }).notNull().unique(),
   name: varchar("name", { length: 255 }),
+  isAdmin: boolean("is_admin").notNull().default(false),
   createdAt: int("created_at").notNull().default(0),
 });
 
@@ -19,17 +19,35 @@ export const tasks = mysqlTable("tasks", {
   id: int("id").primaryKey().autoincrement(),
   title: varchar("title", { length: 255 }).notNull(),
   workerId: int("worker_id"),
+  requiresPhoto: boolean("requires_photo").notNull().default(false),
+  photoUrl: varchar("photo_url", { length: 500 }),
+  isCompleted: boolean("is_completed").notNull().default(false),
+  weekDays: varchar("week_days", { length: 20 }), // JSON массив дней: [0,1,2,3,4,5,6] где 0=Вс, 1=Пн, ..., 6=Сб
+  isRecurring: boolean("is_recurring").notNull().default(true), // Повторяющаяся задача (сбрасывается каждый день)
 });
 
 export const insertUserSchema = z.object({
-  email: z.string().email(),
-  password: z.string().min(6),
+  phone: z.string().min(1, "Номер телефона обязателен").refine(
+    (val) => {
+      const normalized = val.replace(/\s+/g, "").replace(/-/g, "");
+      // Проверяем формат: +7 и затем 9-10 цифр (для российских номеров)
+      return /^\+7\d{9,10}$/.test(normalized);
+    },
+    "Неверный формат номера телефона (формат: +7XXXXXXXXX или +7XXXXXXXXXX)"
+  ),
   name: z.string().optional(),
+  isAdmin: z.boolean().optional().default(false),
 });
 
 export const loginSchema = z.object({
-  email: z.string().email(),
-  password: z.string().min(1),
+  phone: z.string().min(1, "Номер телефона обязателен").refine(
+    (val) => {
+      const normalized = val.replace(/\s+/g, "").replace(/-/g, "");
+      // Проверяем формат: +7 и затем 9-10 цифр (для российских номеров)
+      return /^\+7\d{9,10}$/.test(normalized);
+    },
+    "Неверный формат номера телефона (формат: +7XXXXXXXXX или +7XXXXXXXXXX)"
+  ),
 });
 
 export const insertWorkerSchema = createInsertSchema(workers).pick({
@@ -39,6 +57,12 @@ export const insertWorkerSchema = createInsertSchema(workers).pick({
 export const insertTaskSchema = createInsertSchema(tasks).pick({
   title: true,
   workerId: true,
+  requiresPhoto: true,
+}).extend({
+  photoUrl: z.string().nullable().optional(),
+  isCompleted: z.boolean().optional().default(false),
+  weekDays: z.array(z.number().min(0).max(6)).nullable().optional(), // массив дней недели [0-6]
+  isRecurring: z.boolean().optional().default(true), // повторяющаяся задача
 });
 
 export type User = typeof users.$inferSelect;

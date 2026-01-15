@@ -1,13 +1,19 @@
+import { useEffect } from "react";
 import { useLocation } from "wouter";
 import { useCreateTask } from "@/hooks/use-tasks";
 import { useUsers } from "@/hooks/use-users";
-import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
-import { ArrowLeft, User, Plus, Calendar, RefreshCw } from "lucide-react";
+import { Calendar, RefreshCw, Copy } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import {
   Form,
   FormControl,
@@ -46,30 +52,26 @@ const WEEK_DAYS = [
   { value: 0, label: "Вс" },
 ];
 
-export default function CreateTask() {
+interface Task {
+  id: number;
+  title: string;
+  workerId: number | null;
+  requiresPhoto: boolean;
+  weekDays?: number[] | null;
+  isRecurring?: boolean;
+}
+
+interface DuplicateTaskDialogProps {
+  task: Task | null;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+}
+
+export function DuplicateTaskDialog({ task, open, onOpenChange }: DuplicateTaskDialogProps) {
   const [, setLocation] = useLocation();
-  const { user } = useAuth();
   const createTask = useCreateTask();
   const { data: users = [] } = useUsers();
   const { toast } = useToast();
-
-  // Проверка прав администратора
-  if (!user || !user.isAdmin) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-muted/20 to-background">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold mb-2">Доступ запрещен</h1>
-          <p className="text-muted-foreground mb-4">Только администратор может создавать задачи</p>
-          <button
-            onClick={() => setLocation("/")}
-            className="text-primary hover:underline"
-          >
-            На главную
-          </button>
-        </div>
-      </div>
-    );
-  }
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -81,6 +83,27 @@ export default function CreateTask() {
       isRecurring: true,
     },
   });
+
+  // Заполняем форму данными задачи при открытии
+  useEffect(() => {
+    if (task && open) {
+      // Получаем weekDays и преобразуем в массив если нужно
+      let weekDaysArray: number[] | null = null;
+      if (task.weekDays) {
+        if (Array.isArray(task.weekDays)) {
+          weekDaysArray = task.weekDays;
+        }
+      }
+
+      form.reset({
+        title: task.title,
+        workerId: task.workerId ? task.workerId.toString() : undefined,
+        requiresPhoto: task.requiresPhoto ?? false,
+        weekDays: weekDaysArray,
+        isRecurring: task.isRecurring ?? true,
+      });
+    }
+  }, [task, open, form]);
 
   const onSubmit = (values: FormValues) => {
     const taskData = {
@@ -96,7 +119,7 @@ export default function CreateTask() {
           title: "Успешно",
           description: "Задача создана",
         });
-        setLocation("/");
+        onOpenChange(false);
       },
       onError: (error: any) => {
         toast({
@@ -109,28 +132,17 @@ export default function CreateTask() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-muted/10 to-background">
-      <div className="max-w-2xl mx-auto p-8">
-        <div className="mb-8">
-          <button
-            onClick={() => setLocation("/")}
-            className="flex items-center gap-2 text-muted-foreground hover:text-foreground mb-6 transition-colors group"
-          >
-            <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
-            Назад
-          </button>
-          <div className="flex items-center gap-3 mb-2">
-            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center shadow-lg shadow-primary/20">
-              <Plus className="w-6 h-6 text-primary-foreground" />
-            </div>
-            <h1 className="text-3xl font-bold bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">Новая задача</h1>
-          </div>
-          <p className="text-muted-foreground text-sm ml-[60px]">Создайте новую задачу и назначьте исполнителя</p>
-        </div>
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <Copy className="w-5 h-5" />
+            Дублировать задачу
+          </DialogTitle>
+        </DialogHeader>
 
-        <div className="bg-card/80 backdrop-blur-sm rounded-2xl border border-border/50 shadow-xl p-8">
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
             <FormField
               control={form.control}
               name="title"
@@ -138,10 +150,10 @@ export default function CreateTask() {
                 <FormItem>
                   <FormLabel>Название</FormLabel>
                   <FormControl>
-                    <Input 
-                      placeholder="Что нужно сделать?" 
+                    <Input
+                      placeholder="Что нужно сделать?"
                       className="things-input"
-                      {...field} 
+                      {...field}
                     />
                   </FormControl>
                   <FormMessage />
@@ -155,9 +167,9 @@ export default function CreateTask() {
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Исполнитель</FormLabel>
-                  <Select 
-                    onValueChange={field.onChange} 
-                    defaultValue={field.value?.toString()}
+                  <Select
+                    onValueChange={field.onChange}
+                    value={field.value?.toString()}
                   >
                     <FormControl>
                       <SelectTrigger className="things-input w-full">
@@ -165,18 +177,11 @@ export default function CreateTask() {
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      {users.length === 0 ? (
-                        <div className="p-3 text-sm text-muted-foreground text-center">
-                          <User className="w-8 h-8 mx-auto mb-2 text-muted-foreground/50" />
-                          <p>Нет пользователей</p>
-                        </div>
-                      ) : (
-                        users.map((user) => (
-                          <SelectItem key={user.id} value={user.id.toString()}>
-                            {user.name || user.phone}
-                          </SelectItem>
-                        ))
-                      )}
+                      {users.map((user) => (
+                        <SelectItem key={user.id} value={user.id.toString()}>
+                          {user.name || user.phone}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                   <FormMessage />
@@ -188,7 +193,7 @@ export default function CreateTask() {
               control={form.control}
               name="requiresPhoto"
               render={({ field }) => (
-                <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border border-border/50 p-4">
+                <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border border-border/50 p-3">
                   <FormControl>
                     <Checkbox
                       checked={field.value}
@@ -196,12 +201,9 @@ export default function CreateTask() {
                     />
                   </FormControl>
                   <div className="space-y-1 leading-none">
-                    <FormLabel className="cursor-pointer">
+                    <FormLabel className="cursor-pointer text-sm">
                       Добавить фото результатов
                     </FormLabel>
-                    <p className="text-xs text-muted-foreground">
-                      Пользователь должен будет загрузить фотографию перед завершением задачи
-                    </p>
                   </div>
                 </FormItem>
               )}
@@ -211,14 +213,11 @@ export default function CreateTask() {
               control={form.control}
               name="weekDays"
               render={({ field }) => (
-                <FormItem className="rounded-md border border-border/50 p-4">
-                  <div className="flex items-center gap-2 mb-3">
+                <FormItem className="rounded-md border border-border/50 p-3">
+                  <div className="flex items-center gap-2 mb-2">
                     <Calendar className="w-4 h-4 text-muted-foreground" />
                     <FormLabel className="text-sm font-medium">Дни недели</FormLabel>
                   </div>
-                  <p className="text-xs text-muted-foreground mb-3">
-                    Выберите дни, когда задача будет показываться пользователю. Если ничего не выбрано - задача видна всегда.
-                  </p>
                   <div className="flex flex-wrap gap-2">
                     {WEEK_DAYS.map((day) => {
                       const isSelected = field.value?.includes(day.value) ?? false;
@@ -254,7 +253,7 @@ export default function CreateTask() {
               control={form.control}
               name="isRecurring"
               render={({ field }) => (
-                <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border border-border/50 p-4">
+                <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border border-border/50 p-3">
                   <FormControl>
                     <Checkbox
                       checked={field.value}
@@ -262,39 +261,35 @@ export default function CreateTask() {
                     />
                   </FormControl>
                   <div className="space-y-1 leading-none">
-                    <FormLabel className="cursor-pointer flex items-center gap-2">
+                    <FormLabel className="cursor-pointer flex items-center gap-2 text-sm">
                       <RefreshCw className="w-4 h-4" />
                       Повторяющаяся задача
                     </FormLabel>
-                    <p className="text-xs text-muted-foreground">
-                      Задача будет автоматически сбрасываться каждый день. Фотографии удаляются, статус выполнения сбрасывается.
-                    </p>
                   </div>
                 </FormItem>
               )}
             />
 
-              <div className="flex gap-4 pt-4">
-                <Button 
-                  type="button" 
-                  variant="ghost"
-                  onClick={() => setLocation("/")}
-                  className="flex-1 border border-border/50"
-                >
-                  Отмена
-                </Button>
-                <Button 
-                  type="submit" 
-                  disabled={createTask.isPending}
-                  className="flex-1 bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary shadow-lg hover:shadow-xl transition-all"
-                >
-                  {createTask.isPending ? "Создание..." : "Создать"}
-                </Button>
-              </div>
-            </form>
-          </Form>
-        </div>
-      </div>
-    </div>
+            <div className="flex gap-3 pt-2">
+              <Button
+                type="button"
+                variant="ghost"
+                onClick={() => onOpenChange(false)}
+                className="flex-1 border border-border/50"
+              >
+                Отмена
+              </Button>
+              <Button
+                type="submit"
+                disabled={createTask.isPending}
+                className="flex-1 bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary"
+              >
+                {createTask.isPending ? "Создание..." : "Создать"}
+              </Button>
+            </div>
+          </form>
+        </Form>
+      </DialogContent>
+    </Dialog>
   );
 }

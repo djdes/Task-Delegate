@@ -6,11 +6,11 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider } from "@/contexts/AuthContext";
 import Dashboard from "@/pages/Dashboard";
 import Login from "@/pages/Login";
-import Register from "@/pages/Register";
 import CreateTask from "@/pages/CreateTask";
 import EditTask from "@/pages/EditTask";
 import CreateWorker from "@/pages/CreateWorker";
 import EditWorker from "@/pages/EditWorker";
+import AdminUsers from "@/pages/AdminUsers";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -18,7 +18,7 @@ function Router() {
     <Switch>
       <Route path="/" component={Dashboard} />
       <Route path="/login" component={Login} />
-      <Route path="/register" component={Register} />
+      <Route path="/admin/users" component={AdminUsers} />
       <Route path="/tasks/new" component={CreateTask} />
       <Route path="/tasks/:id/edit" component={EditTask} />
       <Route path="/workers/new" component={CreateWorker} />
