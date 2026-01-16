@@ -2,14 +2,14 @@
 
 # ===========================================
 # Скрипт деплоя Task-Delegate на VPS
+# Запускается локально, выполняет команды на сервере
 # ===========================================
 
-# Настройки - ИЗМЕНИТЕ ПОД СЕБЯ
+# Настройки сервера
 SERVER_USER="tasks"
 SERVER_HOST="tasks.magday.ru"
 SERVER_PORT="50222"
-REMOTE_PATH="/var/www/task-delegate"
-APP_NAME="task-delegate"
+REMOTE_PATH="/var/www/tasks/data/www/tasks.magday.ru"
 
 # Цвета для вывода
 GREEN='\033[0;32m'
@@ -17,62 +17,36 @@ YELLOW='\033[1;33m'
 RED='\033[0;31m'
 NC='\033[0m' # No Color
 
-echo -e "${YELLOW}=== Task-Delegate Deploy Script ===${NC}"
+echo -e "${YELLOW}=== Task-Delegate Deploy ===${NC}"
+echo -e "Сервер: ${SERVER_USER}@${SERVER_HOST}:${SERVER_PORT}"
+echo -e "Путь: ${REMOTE_PATH}"
+echo ""
 
-# 1. Сборка проекта
-echo -e "${GREEN}[1/4] Сборка проекта...${NC}"
-npm run build
-if [ $? -ne 0 ]; then
-    echo -e "${RED}Ошибка сборки!${NC}"
-    exit 1
-fi
+# Выполняем команды на сервере
+echo -e "${GREEN}Подключение к серверу...${NC}"
+ssh -p $SERVER_PORT $SERVER_USER@$SERVER_HOST << 'EOF'
+    cd /var/www/tasks/data/www/tasks.magday.ru
 
-# 2. Создание временной папки для деплоя
-echo -e "${GREEN}[2/4] Подготовка файлов...${NC}"
-DEPLOY_DIR="deploy_temp"
-rm -rf $DEPLOY_DIR
-mkdir -p $DEPLOY_DIR
+    echo ">>> git pull"
+    git pull
 
-# Копируем нужные файлы
-cp -r dist $DEPLOY_DIR/
-cp package.json $DEPLOY_DIR/
-cp package-lock.json $DEPLOY_DIR/
-cp .env $DEPLOY_DIR/
+    echo ">>> npm run build"
+    npm run build
 
-# 3. Загрузка на сервер
-echo -e "${GREEN}[3/4] Загрузка на сервер...${NC}"
-ssh -p $SERVER_PORT $SERVER_USER@$SERVER_HOST "mkdir -p $REMOTE_PATH"
+    echo ">>> pm2 restart 0"
+    pm2 restart 0
 
-rsync -avz --delete -e "ssh -p $SERVER_PORT" \
-    $DEPLOY_DIR/ \
-    $SERVER_USER@$SERVER_HOST:$REMOTE_PATH/
-
-if [ $? -ne 0 ]; then
-    echo -e "${RED}Ошибка загрузки на сервер!${NC}"
-    rm -rf $DEPLOY_DIR
-    exit 1
-fi
-
-# 4. Установка зависимостей и перезапуск на сервере
-echo -e "${GREEN}[4/4] Установка и перезапуск на сервере...${NC}"
-ssh -p $SERVER_PORT $SERVER_USER@$SERVER_HOST << EOF
-    cd $REMOTE_PATH
-    npm install --production
-
-    # Проверяем, запущен ли PM2 процесс
-    if pm2 list | grep -q "$APP_NAME"; then
-        pm2 restart $APP_NAME
-    else
-        pm2 start dist/index.cjs --name $APP_NAME
-        pm2 save
-    fi
-
-    echo "Статус приложения:"
-    pm2 status $APP_NAME
+    echo ""
+    echo ">>> pm2 status"
+    pm2 status
 EOF
 
-# Очистка
-rm -rf $DEPLOY_DIR
-
-echo -e "${GREEN}=== Деплой завершён! ===${NC}"
-echo -e "Сайт: https://$SERVER_HOST"
+if [ $? -eq 0 ]; then
+    echo ""
+    echo -e "${GREEN}=== Деплой завершён! ===${NC}"
+    echo -e "Сайт: https://${SERVER_HOST}"
+else
+    echo ""
+    echo -e "${RED}=== Ошибка деплоя! ===${NC}"
+    exit 1
+fi

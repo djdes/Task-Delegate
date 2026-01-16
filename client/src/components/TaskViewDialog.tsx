@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import { Upload, X, CheckCircle2, Trash2, RotateCcw } from "lucide-react";
+import { Upload, X, CheckCircle2, Trash2, RotateCcw, Camera, Check, Coins } from "lucide-react";
 import type { Task } from "@shared/schema";
 
 interface TaskViewDialogProps {
@@ -39,26 +39,19 @@ export function TaskViewDialog({
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  // Обновляем текущую задачу когда task меняется
   React.useEffect(() => {
     if (task) {
-      // Убеждаемся, что requiresPhoto и photoUrl есть в задаче
-      // Если поля отсутствуют, проверяем их наличие в объекте
-      // Нормализуем задачу - проверяем все возможные варианты названий полей
       const taskWithDefaults: Task = {
         ...task,
-        requiresPhoto: (task as any).requiresPhoto !== undefined 
-          ? Boolean((task as any).requiresPhoto) 
-          : (task as any).requires_photo !== undefined 
+        requiresPhoto: (task as any).requiresPhoto !== undefined
+          ? Boolean((task as any).requiresPhoto)
+          : (task as any).requires_photo !== undefined
             ? Boolean((task as any).requires_photo)
             : false,
-        photoUrl: (task as any).photoUrl !== undefined 
-          ? (task as any).photoUrl 
+        photoUrl: (task as any).photoUrl !== undefined
+          ? (task as any).photoUrl
           : (task as any).photo_url ?? null,
       };
-      console.log("TaskViewDialog - Original task:", task);
-      console.log("TaskViewDialog - Normalized task:", taskWithDefaults);
-      console.log("TaskViewDialog - requiresPhoto value:", taskWithDefaults.requiresPhoto, typeof taskWithDefaults.requiresPhoto);
       setCurrentTask(taskWithDefaults);
     } else {
       setCurrentTask(null);
@@ -79,7 +72,6 @@ export function TaskViewDialog({
       });
 
       if (!response.ok) {
-        // Пытаемся прочитать json, если нет — текст
         let message = "Ошибка загрузки фото";
         try {
           const error = await response.json();
@@ -96,7 +88,6 @@ export function TaskViewDialog({
       return response.json();
     },
     onSuccess: async (data: { photoUrl: string }) => {
-      // Обновляем текущую задачу с новым photoUrl
       if (currentTask) {
         const updatedTask = { ...currentTask, photoUrl: data.photoUrl };
         setCurrentTask(updatedTask);
@@ -104,10 +95,8 @@ export function TaskViewDialog({
           onTaskUpdate(updatedTask);
         }
       }
-      // Инвалидируем кэш задач для обновления списка
       await queryClient.invalidateQueries({ queryKey: ["tasks"] });
       await queryClient.invalidateQueries({ queryKey: [api.tasks.list.path] });
-      // Также обновляем кэш конкретной задачи
       if (currentTask) {
         const updatedTask = { ...currentTask, photoUrl: data.photoUrl };
         queryClient.setQueryData([api.tasks.get.path, currentTask.id], updatedTask);
@@ -185,7 +174,7 @@ export function TaskViewDialog({
   });
 
   const handleDeletePhoto = () => {
-    if (confirm("Вы уверены, что хотите удалить фотографию?")) {
+    if (confirm("Удалить фотографию?")) {
       deletePhotoMutation.mutate();
     }
   };
@@ -207,7 +196,6 @@ export function TaskViewDialog({
         setPreview(reader.result as string);
       };
       reader.readAsDataURL(file);
-      // Автоматически загружаем файл после выбора
       setTimeout(() => {
         uploadPhotoMutation.mutate(file);
       }, 100);
@@ -224,7 +212,7 @@ export function TaskViewDialog({
     if (currentTask?.requiresPhoto && !currentTask.photoUrl) {
       toast({
         title: "Ошибка",
-        description: "Необходимо загрузить фотографию перед завершением задачи",
+        description: "Сначала загрузите фотографию",
         variant: "destructive",
       });
       return;
@@ -234,132 +222,145 @@ export function TaskViewDialog({
 
   if (!currentTask) return null;
 
+  const hasPrice = (currentTask as any).price > 0;
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl">
-        <DialogHeader>
-          <DialogTitle>
-            {(currentTask as any).description || "Подробности не указаны"}
-          </DialogTitle>
-          <DialogDescription>
-            {currentTask.requiresPhoto
-              ? "Для завершения задачи необходимо загрузить фотографию результатов"
-              : currentTask.title}
-          </DialogDescription>
-        </DialogHeader>
+      <DialogContent className="max-w-lg mx-4 rounded-2xl p-0 overflow-hidden">
+        {/* Header */}
+        <div className="bg-primary text-primary-foreground p-4">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-bold text-white">
+              {currentTask.title}
+            </DialogTitle>
+            {(currentTask as any).description && (
+              <DialogDescription className="text-white/80 text-base mt-1">
+                {(currentTask as any).description}
+              </DialogDescription>
+            )}
+          </DialogHeader>
+        </div>
 
-        <div className="space-y-4">
-          {/* Показываем поле загрузки фото ТОЛЬКО если для задачи включён requiresPhoto */}
-          {(currentTask.requiresPhoto === true || (currentTask.requiresPhoto as any) === 1) && (
-            <div className="space-y-4">
-              <div>
-                <label className="text-sm font-medium mb-2 block">
-                  Фотография результатов
-                </label>
-                {currentTask.photoUrl ? (
-                  <div className="relative">
-                    <div className="relative inline-block">
-                      <img
-                        src={currentTask.photoUrl}
-                        alt="Фото результатов"
-                        className="w-32 h-32 object-cover rounded-lg border border-border/50 cursor-pointer hover:opacity-80 transition-opacity"
-                        onClick={() => setIsPhotoFullscreen(true)}
-                      />
-                      <button
-                        onClick={handleDeletePhoto}
-                        disabled={deletePhotoMutation.isPending}
-                        className="absolute -top-2 -right-2 p-1.5 bg-destructive text-destructive-foreground rounded-full hover:bg-destructive/90 transition-colors shadow-md"
-                        title="Удалить фото"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
-                    </div>
-                    <div className="mt-2 flex items-center gap-2 text-sm text-green-600">
-                      <CheckCircle2 className="w-4 h-4" />
-                      <span>Фотография загружена (нажмите для просмотра)</span>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="space-y-2">
-                    <input
-                      ref={fileInputRef}
-                      type="file"
-                      accept="image/*"
-                      onChange={handleFileSelect}
-                      className="hidden"
-                      id="photo-upload"
-                    />
-                    <label
-                      htmlFor="photo-upload"
-                      className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-border/50 rounded-lg cursor-pointer hover:border-primary/50 transition-colors"
-                    >
-                      {preview ? (
-                        <div className="relative w-full h-full">
-                          <img
-                            src={preview}
-                            alt="Preview"
-                            className="w-full h-full object-cover rounded-lg"
-                          />
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setSelectedFile(null);
-                              setPreview(null);
-                              if (fileInputRef.current) {
-                                fileInputRef.current.value = "";
-                              }
-                            }}
-                            className="absolute top-2 right-2 p-1 bg-destructive text-destructive-foreground rounded-full hover:bg-destructive/90"
-                          >
-                            <X className="w-4 h-4" />
-                          </button>
-                        </div>
-                      ) : (
-                        <>
-                          <Upload className="w-8 h-8 text-muted-foreground mb-2" />
-                          <p className="text-sm text-muted-foreground">
-                            Нажмите для выбора фотографии
-                          </p>
-                        </>
-                      )}
-                    </label>
-                    {selectedFile && (
-                      <Button
-                        onClick={handleUpload}
-                        disabled={uploadPhotoMutation.isPending}
-                        className="w-full"
-                      >
-                        {uploadPhotoMutation.isPending ? "Загрузка..." : "Загрузить фотографию"}
-                      </Button>
-                    )}
-                  </div>
-                )}
-              </div>
+        <div className="p-4 space-y-4">
+          {/* Price badge */}
+          {hasPrice && (
+            <div className="price-badge inline-flex">
+              <Coins className="w-4 h-4" />
+              <span>+{(currentTask as any).price} ₽ за выполнение</span>
             </div>
           )}
 
-          <div className="flex justify-end gap-2">
-            <Button variant="outline" onClick={() => onOpenChange(false)}>
-              Закрыть
-            </Button>
+          {/* Photo upload section */}
+          {(currentTask.requiresPhoto === true || (currentTask.requiresPhoto as any) === 1) && (
+            <div className="space-y-3">
+              <div className="flex items-center gap-2">
+                <Camera className="w-5 h-5 text-primary" />
+                <span className="text-base font-semibold">Фото результата</span>
+                {!currentTask.photoUrl && (
+                  <span className="text-xs text-orange-500 font-medium">(обязательно)</span>
+                )}
+              </div>
+
+              {currentTask.photoUrl ? (
+                <div className="relative">
+                  <div className="relative inline-block">
+                    <img
+                      src={currentTask.photoUrl}
+                      alt="Фото результатов"
+                      className="w-full max-w-xs h-48 object-cover rounded-2xl border-2 border-green-500 cursor-pointer hover:opacity-90 transition-opacity"
+                      onClick={() => setIsPhotoFullscreen(true)}
+                    />
+                    <button
+                      onClick={handleDeletePhoto}
+                      disabled={deletePhotoMutation.isPending}
+                      className="absolute top-2 right-2 p-2 bg-destructive text-destructive-foreground rounded-xl hover:bg-destructive/90 transition-colors shadow-lg"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                    <div className="absolute bottom-2 left-2 bg-green-500 text-white px-3 py-1.5 rounded-xl flex items-center gap-1.5 text-sm font-medium">
+                      <CheckCircle2 className="w-4 h-4" />
+                      Загружено
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    capture="environment"
+                    onChange={handleFileSelect}
+                    className="hidden"
+                    id="photo-upload"
+                  />
+                  <label
+                    htmlFor="photo-upload"
+                    className="flex flex-col items-center justify-center w-full h-40 border-2 border-dashed border-primary/30 bg-primary/5 rounded-2xl cursor-pointer hover:border-primary hover:bg-primary/10 transition-all active:scale-[0.98]"
+                  >
+                    {preview ? (
+                      <div className="relative w-full h-full">
+                        <img
+                          src={preview}
+                          alt="Preview"
+                          className="w-full h-full object-cover rounded-2xl"
+                        />
+                        {uploadPhotoMutation.isPending && (
+                          <div className="absolute inset-0 bg-black/50 rounded-2xl flex items-center justify-center">
+                            <div className="w-8 h-8 border-3 border-white border-t-transparent rounded-full animate-spin"></div>
+                          </div>
+                        )}
+                      </div>
+                    ) : (
+                      <>
+                        <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mb-3">
+                          <Camera className="w-8 h-8 text-primary" />
+                        </div>
+                        <p className="text-base font-semibold text-foreground">
+                          Сделать фото
+                        </p>
+                        <p className="text-sm text-muted-foreground mt-1">
+                          или выбрать из галереи
+                        </p>
+                      </>
+                    )}
+                  </label>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Action buttons */}
+          <div className="flex flex-col gap-3 pt-2">
             {canComplete && (
               currentTask.isCompleted ? (
-                <Button
-                  variant="secondary"
+                <button
                   onClick={onComplete}
+                  className="ozon-btn ozon-btn-secondary flex items-center justify-center gap-2 w-full"
                 >
-                  <RotateCcw className="w-4 h-4 mr-2" />
+                  <RotateCcw className="w-5 h-5" />
                   Вернуть в работу
-                </Button>
+                </button>
               ) : (
-                <Button
+                <button
                   onClick={handleComplete}
                   disabled={currentTask.requiresPhoto && !currentTask.photoUrl}
+                  className="ozon-btn ozon-btn-primary flex items-center justify-center gap-2 w-full disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  Завершить задачу
-                </Button>
+                  <Check className="w-5 h-5" />
+                  {currentTask.requiresPhoto && !currentTask.photoUrl
+                    ? "Сначала загрузите фото"
+                    : "Завершить задачу"
+                  }
+                </button>
               )
             )}
+            <button
+              onClick={() => onOpenChange(false)}
+              className="ozon-btn ozon-btn-secondary w-full"
+            >
+              Закрыть
+            </button>
           </div>
         </div>
       </DialogContent>
@@ -367,11 +368,11 @@ export function TaskViewDialog({
       {/* Fullscreen photo modal */}
       {isPhotoFullscreen && currentTask?.photoUrl && (
         <div
-          className="fixed inset-0 z-[100] bg-black/90 flex items-center justify-center cursor-pointer"
+          className="fixed inset-0 z-[100] bg-black/95 flex items-center justify-center cursor-pointer"
           onClick={() => setIsPhotoFullscreen(false)}
         >
           <button
-            className="absolute top-4 right-4 p-2 bg-white/10 hover:bg-white/20 rounded-full transition-colors"
+            className="absolute top-4 right-4 p-3 bg-white/10 hover:bg-white/20 rounded-full transition-colors"
             onClick={() => setIsPhotoFullscreen(false)}
           >
             <X className="w-6 h-6 text-white" />
@@ -379,7 +380,7 @@ export function TaskViewDialog({
           <img
             src={currentTask.photoUrl}
             alt="Фото результатов"
-            className="max-w-[90vw] max-h-[90vh] object-contain rounded-lg"
+            className="max-w-[95vw] max-h-[90vh] object-contain rounded-2xl"
             onClick={(e) => e.stopPropagation()}
           />
         </div>

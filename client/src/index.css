@@ -1,76 +1,82 @@
-@import url('https://fonts.googleapis.com/css2?family=SF+Pro+Display:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 :root {
-  --font-display: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Inter', sans-serif;
-  --font-body: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Inter', sans-serif;
+  --font-display: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-body: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
 
-  /* Things-inspired Color Palette */
-  --background: 0 0% 97%;
-  --foreground: 0 0% 13%;
-  
-  --primary: 211 100% 50%;
+  /* Ozon-inspired Color Palette */
+  --background: 220 14% 96%;
+  --foreground: 222 47% 11%;
+
+  /* Ozon blue #005bff */
+  --primary: 220 100% 50%;
   --primary-foreground: 0 0% 100%;
-  
-  --secondary: 0 0% 96%;
-  --secondary-foreground: 0 0% 13%;
-  
-  --muted: 0 0% 94%;
-  --muted-foreground: 0 0% 45%;
-  
-  --accent: 211 100% 50%;
+
+  --secondary: 220 14% 96%;
+  --secondary-foreground: 222 47% 11%;
+
+  --muted: 220 14% 92%;
+  --muted-foreground: 220 9% 46%;
+
+  --accent: 220 100% 50%;
   --accent-foreground: 0 0% 100%;
-  
+
   --destructive: 0 84% 60%;
   --destructive-foreground: 0 0% 100%;
 
+  /* Ozon green for success */
+  --success: 152 69% 41%;
+  --success-foreground: 0 0% 100%;
+
   --card: 0 0% 100%;
-  --card-foreground: 0 0% 13%;
+  --card-foreground: 222 47% 11%;
 
   --popover: 0 0% 100%;
-  --popover-foreground: 0 0% 13%;
+  --popover-foreground: 222 47% 11%;
 
-  --border: 0 0% 90%;
-  --input: 0 0% 90%;
-  --ring: 211 100% 50%;
-  
-  --radius: 0.625rem;
+  --border: 220 13% 91%;
+  --input: 220 13% 91%;
+  --ring: 220 100% 50%;
 
-  --things-blue: 211 100% 50%;
-  --things-yellow: 45 100% 51%;
-  --things-green: 142 71% 45%;
-  --things-red: 0 84% 60%;
-  --things-purple: 271 91% 65%;
-  --things-orange: 25 95% 53%;
+  --radius: 0.75rem;
+
+  /* Ozon specific colors */
+  --ozon-blue: 220 100% 50%;
+  --ozon-blue-light: 220 100% 96%;
+  --ozon-pink: 338 100% 63%;
+  --ozon-green: 152 69% 41%;
+  --ozon-orange: 25 95% 53%;
+  --ozon-gray: 220 9% 46%;
 }
 
 .dark {
-  --background: 0 0% 8%;
-  --foreground: 0 0% 95%;
-  
-  --primary: 211 100% 55%;
+  --background: 222 47% 8%;
+  --foreground: 0 0% 98%;
+
+  --primary: 220 100% 55%;
   --primary-foreground: 0 0% 100%;
-  
-  --secondary: 0 0% 15%;
-  --secondary-foreground: 0 0% 95%;
-  
-  --muted: 0 0% 18%;
-  --muted-foreground: 0 0% 55%;
-  
-  --accent: 211 100% 55%;
+
+  --secondary: 222 47% 14%;
+  --secondary-foreground: 0 0% 98%;
+
+  --muted: 222 47% 16%;
+  --muted-foreground: 220 9% 60%;
+
+  --accent: 220 100% 55%;
   --accent-foreground: 0 0% 100%;
-  
-  --card: 0 0% 12%;
-  --card-foreground: 0 0% 95%;
 
-  --popover: 0 0% 12%;
-  --popover-foreground: 0 0% 95%;
+  --card: 222 47% 11%;
+  --card-foreground: 0 0% 98%;
 
-  --border: 0 0% 20%;
-  --input: 0 0% 20%;
+  --popover: 222 47% 11%;
+  --popover-foreground: 0 0% 98%;
+
+  --border: 222 47% 20%;
+  --input: 222 47% 20%;
 }
 
 @layer base {
@@ -92,68 +98,124 @@
 }
 
 @layer components {
-  .things-card {
-    @apply bg-card rounded-xl border border-border/50 shadow-sm;
+  /* Ozon-style card */
+  .ozon-card {
+    @apply bg-card rounded-2xl shadow-sm;
     transition: all 0.2s ease;
   }
-  
-  .things-card:hover {
-    @apply shadow-md border-border;
-  }
-  
-  .things-input {
-    @apply h-10 px-4 rounded-lg border border-border bg-background
-           focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary
-           transition-all duration-200 placeholder:text-muted-foreground
-           hover:border-primary/50 shadow-sm hover:shadow-md;
+
+  .ozon-card:hover {
+    @apply shadow-md;
   }
 
-  .things-checkbox {
-    @apply w-5 h-5 rounded-full border-2 border-border flex items-center justify-center
-           transition-all duration-150 cursor-pointer;
+  /* Large task card for mobile */
+  .task-card {
+    @apply bg-card rounded-2xl p-4 shadow-sm active:scale-[0.98] transition-all duration-150;
   }
-  
-  .things-checkbox:hover {
-    @apply border-primary/50;
+
+  .task-card-completed {
+    @apply bg-muted/50;
   }
-  
-  .things-checkbox.checked {
+
+  /* Ozon-style checkbox - large for mobile */
+  .ozon-checkbox {
+    @apply w-7 h-7 rounded-full border-2 border-border flex items-center justify-center
+           transition-all duration-150 cursor-pointer flex-shrink-0;
+  }
+
+  .ozon-checkbox:hover {
+    @apply border-primary;
+  }
+
+  .ozon-checkbox.checked {
     @apply bg-primary border-primary;
   }
 
-  .things-section-header {
-    @apply text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3;
+  /* Ozon-style button */
+  .ozon-btn {
+    @apply h-12 px-6 rounded-xl font-semibold text-base transition-all duration-150 active:scale-[0.98];
+  }
+
+  .ozon-btn-primary {
+    @apply bg-primary text-primary-foreground hover:bg-primary/90;
+  }
+
+  .ozon-btn-secondary {
+    @apply bg-muted text-foreground hover:bg-muted/80;
+  }
+
+  /* Ozon-style header */
+  .ozon-header {
+    @apply sticky top-0 z-50 bg-primary text-primary-foreground px-4 py-3 shadow-md;
+  }
+
+  /* Bottom navigation for mobile */
+  .ozon-bottom-nav {
+    @apply fixed bottom-0 left-0 right-0 bg-card border-t border-border px-2 py-2 z-50;
+    padding-bottom: calc(0.5rem + env(safe-area-inset-bottom, 0));
+  }
+
+  .ozon-bottom-nav-item {
+    @apply flex flex-col items-center justify-center gap-1 py-2 px-3 rounded-xl transition-colors;
+  }
+
+  .ozon-bottom-nav-item.active {
+    @apply text-primary;
+  }
+
+  .ozon-bottom-nav-item:not(.active) {
+    @apply text-muted-foreground;
+  }
+
+  /* Price badge */
+  .price-badge {
+    @apply inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-green-500/10 text-green-600 text-sm font-semibold;
+  }
+
+  /* Category badge */
+  .category-badge {
+    @apply inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-primary/10 text-primary text-sm font-medium;
+  }
+
+  /* User avatar */
+  .user-avatar {
+    @apply w-10 h-10 rounded-full bg-gradient-to-br from-primary to-primary/60 flex items-center justify-center text-primary-foreground font-semibold;
+  }
+
+  .user-avatar-sm {
+    @apply w-6 h-6 rounded-full bg-gradient-to-br from-primary to-primary/60 flex items-center justify-center text-primary-foreground text-xs font-medium;
+  }
+
+  /* Empty state */
+  .empty-state {
+    @apply flex flex-col items-center justify-center py-16 px-4 text-center;
+  }
+
+  .empty-state-icon {
+    @apply w-24 h-24 rounded-full bg-muted flex items-center justify-center mb-6;
+  }
+
+  /* Legacy support */
+  .things-card {
+    @apply ozon-card;
+  }
+
+  .things-checkbox {
+    @apply ozon-checkbox;
   }
 
   .things-list-item {
-    @apply flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200;
+    @apply flex items-center gap-4 p-4 rounded-2xl transition-all duration-200;
   }
-  
+
   .things-list-item:hover {
-    @apply bg-muted/70 shadow-sm;
-  }
-
-  .things-sidebar-item {
-    @apply flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200;
-  }
-  
-  .things-sidebar-item:hover {
-    @apply bg-muted/70 transform translate-x-1;
-  }
-  
-  .things-sidebar-item.active {
-    @apply bg-gradient-to-r from-primary/15 to-primary/5 text-primary border-l-2 border-primary shadow-sm;
-  }
-
-  .things-badge {
-    @apply inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium;
+    @apply bg-muted/50;
   }
 
   .things-fab {
-    @apply fixed bottom-6 right-6 w-14 h-14 rounded-full bg-primary text-primary-foreground
+    @apply fixed bottom-20 right-4 w-14 h-14 rounded-full bg-primary text-primary-foreground
            shadow-lg shadow-primary/25 flex items-center justify-center
-           hover:shadow-xl hover:shadow-primary/30 hover:scale-105
-           active:scale-95 transition-all duration-200;
+           hover:shadow-xl hover:shadow-primary/30 active:scale-95 transition-all duration-200 z-40;
   }
 }
 

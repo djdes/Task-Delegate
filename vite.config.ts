@@ -36,5 +36,9 @@ export default defineConfig({
       strict: true,
       deny: ["**/.*"],
     },
+    watch: {
+      usePolling: false,
+      interval: 100,
+    },
   },
 });
