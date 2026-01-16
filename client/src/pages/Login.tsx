@@ -147,7 +147,7 @@ export default function Login() {
               className="ozon-btn ozon-btn-primary w-full text-lg"
               disabled={isLoading}
             >
-              {isLoading ? "Вход..." : "Продолжить"}
+              {isLoading ? "Вход..." : "Войти"}
             </button>
           </form>
         </Form>
