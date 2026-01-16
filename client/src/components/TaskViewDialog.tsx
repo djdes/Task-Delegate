@@ -226,65 +226,63 @@ export function TaskViewDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-lg mx-4 rounded-2xl p-0 overflow-hidden">
-        {/* Header */}
-        <div className="bg-primary text-primary-foreground p-4">
+      <DialogContent className="p-0 border-0">
+        {/* Header with gradient */}
+        <div className="bg-gradient-to-r from-primary to-primary/90 text-white px-5 py-4">
           <DialogHeader>
-            <DialogTitle className="text-xl font-bold text-white">
+            <DialogTitle className="text-lg font-bold text-white pr-8">
               {currentTask.title}
             </DialogTitle>
             {(currentTask as any).description && (
-              <DialogDescription className="text-white/80 text-base mt-1">
+              <DialogDescription className="text-white/80 text-sm mt-1">
                 {(currentTask as any).description}
               </DialogDescription>
             )}
           </DialogHeader>
+
+          {/* Price badge in header */}
+          {hasPrice && (
+            <div className="mt-3 inline-flex items-center gap-1.5 bg-white/20 text-white px-3 py-1.5 rounded-lg text-sm font-semibold">
+              <Coins className="w-4 h-4 text-yellow-300" />
+              <span>+{(currentTask as any).price} ₽</span>
+            </div>
+          )}
         </div>
 
         <div className="p-4 space-y-4">
-          {/* Price badge */}
-          {hasPrice && (
-            <div className="price-badge inline-flex">
-              <Coins className="w-4 h-4" />
-              <span>+{(currentTask as any).price} ₽ за выполнение</span>
-            </div>
-          )}
-
           {/* Photo upload section */}
           {(currentTask.requiresPhoto === true || (currentTask.requiresPhoto as any) === 1) && (
             <div className="space-y-3">
               <div className="flex items-center gap-2">
-                <Camera className="w-5 h-5 text-primary" />
-                <span className="text-base font-semibold">Фото результата</span>
+                <Camera className="w-4 h-4 text-primary" />
+                <span className="text-sm font-semibold text-foreground">Фото результата</span>
                 {!currentTask.photoUrl && (
-                  <span className="text-xs text-orange-500 font-medium">(обязательно)</span>
+                  <span className="text-xs text-orange-600 font-medium bg-orange-100 px-2 py-0.5 rounded-full">обязательно</span>
                 )}
               </div>
 
               {currentTask.photoUrl ? (
                 <div className="relative">
-                  <div className="relative inline-block">
-                    <img
-                      src={currentTask.photoUrl}
-                      alt="Фото результатов"
-                      className="w-full max-w-xs h-48 object-cover rounded-2xl border-2 border-green-500 cursor-pointer hover:opacity-90 transition-opacity"
-                      onClick={() => setIsPhotoFullscreen(true)}
-                    />
-                    <button
-                      onClick={handleDeletePhoto}
-                      disabled={deletePhotoMutation.isPending}
-                      className="absolute top-2 right-2 p-2 bg-destructive text-destructive-foreground rounded-xl hover:bg-destructive/90 transition-colors shadow-lg"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                    <div className="absolute bottom-2 left-2 bg-green-500 text-white px-3 py-1.5 rounded-xl flex items-center gap-1.5 text-sm font-medium">
-                      <CheckCircle2 className="w-4 h-4" />
-                      Загружено
-                    </div>
+                  <img
+                    src={currentTask.photoUrl}
+                    alt="Фото результатов"
+                    className="w-full h-40 object-cover rounded-xl border-2 border-green-500 cursor-pointer hover:opacity-90 transition-opacity"
+                    onClick={() => setIsPhotoFullscreen(true)}
+                  />
+                  <button
+                    onClick={handleDeletePhoto}
+                    disabled={deletePhotoMutation.isPending}
+                    className="absolute top-2 right-2 p-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors shadow-md"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                  <div className="absolute bottom-2 left-2 bg-green-500 text-white px-2.5 py-1 rounded-lg flex items-center gap-1 text-xs font-medium shadow-md">
+                    <CheckCircle2 className="w-3.5 h-3.5" />
+                    Загружено
                   </div>
                 </div>
               ) : (
-                <div className="space-y-3">
+                <div>
                   <input
                     ref={fileInputRef}
                     type="file"
@@ -296,32 +294,28 @@ export function TaskViewDialog({
                   />
                   <label
                     htmlFor="photo-upload"
-                    className="flex flex-col items-center justify-center w-full h-40 border-2 border-dashed border-primary/30 bg-primary/5 rounded-2xl cursor-pointer hover:border-primary hover:bg-primary/10 transition-all active:scale-[0.98]"
+                    className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-primary/40 bg-primary/5 rounded-xl cursor-pointer hover:border-primary hover:bg-primary/10 transition-all active:scale-[0.99]"
                   >
                     {preview ? (
                       <div className="relative w-full h-full">
                         <img
                           src={preview}
                           alt="Preview"
-                          className="w-full h-full object-cover rounded-2xl"
+                          className="w-full h-full object-cover rounded-xl"
                         />
                         {uploadPhotoMutation.isPending && (
-                          <div className="absolute inset-0 bg-black/50 rounded-2xl flex items-center justify-center">
-                            <div className="w-8 h-8 border-3 border-white border-t-transparent rounded-full animate-spin"></div>
+                          <div className="absolute inset-0 bg-black/50 rounded-xl flex items-center justify-center">
+                            <div className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
                           </div>
                         )}
                       </div>
                     ) : (
                       <>
-                        <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mb-3">
-                          <Camera className="w-8 h-8 text-primary" />
+                        <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mb-2">
+                          <Camera className="w-6 h-6 text-primary" />
                         </div>
-                        <p className="text-base font-semibold text-foreground">
-                          Сделать фото
-                        </p>
-                        <p className="text-sm text-muted-foreground mt-1">
-                          или выбрать из галереи
-                        </p>
+                        <p className="text-sm font-semibold text-foreground">Сделать фото</p>
+                        <p className="text-xs text-muted-foreground">или выбрать из галереи</p>
                       </>
                     )}
                   </label>
@@ -331,12 +325,12 @@ export function TaskViewDialog({
           )}
 
           {/* Action buttons */}
-          <div className="flex flex-col gap-3 pt-2">
+          <div className="flex flex-col gap-2 pt-1">
             {canComplete && (
               currentTask.isCompleted ? (
                 <button
                   onClick={onComplete}
-                  className="ozon-btn ozon-btn-secondary flex items-center justify-center gap-2 w-full"
+                  className="flex items-center justify-center gap-2 w-full h-12 bg-muted hover:bg-muted/80 text-foreground rounded-xl font-semibold transition-colors"
                 >
                   <RotateCcw className="w-5 h-5" />
                   Вернуть в работу
@@ -345,7 +339,7 @@ export function TaskViewDialog({
                 <button
                   onClick={handleComplete}
                   disabled={currentTask.requiresPhoto && !currentTask.photoUrl}
-                  className="ozon-btn ozon-btn-primary flex items-center justify-center gap-2 w-full disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="flex items-center justify-center gap-2 w-full h-12 bg-green-500 hover:bg-green-600 text-white rounded-xl font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-md shadow-green-500/20"
                 >
                   <Check className="w-5 h-5" />
                   {currentTask.requiresPhoto && !currentTask.photoUrl
@@ -357,7 +351,7 @@ export function TaskViewDialog({
             )}
             <button
               onClick={() => onOpenChange(false)}
-              className="ozon-btn ozon-btn-secondary w-full"
+              className="w-full h-11 text-muted-foreground hover:text-foreground hover:bg-muted/50 rounded-xl font-medium transition-colors"
             >
               Закрыть
             </button>
