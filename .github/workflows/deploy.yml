@@ -20,7 +20,5 @@ jobs:
           script: |
             cd ${{ secrets.DEPLOY_PATH }}
             git pull origin main
-            whoami
             pm2 restart all
             pm2 status
-echo $USER
