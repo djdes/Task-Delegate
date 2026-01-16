@@ -136,10 +136,15 @@ export default function Login() {
                       value={field.value}
                       onChange={(e) => {
                         let value = e.target.value;
-                        if (!value.startsWith("+7")) {
-                          value = "+7" + value.replace(/^\+?7?/, "");
+                        // Убираем +7 в начале если есть
+                        let cleaned = value.replace(/^\+?7?/, "");
+                        // Оставляем только цифры
+                        let digits = cleaned.replace(/\D/g, "");
+                        // Если первая цифра 7 (ввод начали с 7 или вставили номер типа 79991234567)
+                        if (digits.startsWith("7") && digits.length > 1) {
+                          digits = digits.slice(1);
                         }
-                        const digits = value.slice(2).replace(/\D/g, "");
+                        // Ограничиваем до 10 цифр
                         const limitedDigits = digits.slice(0, 10);
                         field.onChange("+7" + limitedDigits);
                       }}
