@@ -3,7 +3,7 @@ import { useLocation } from "wouter";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ListTodo } from "lucide-react";
+import { CheckCircle2, Circle, Sparkles } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
@@ -76,8 +76,32 @@ export default function Login() {
     <div className="min-h-screen flex flex-col bg-primary">
       {/* Header */}
       <div className="pt-16 pb-10 px-6 text-center">
-        <div className="w-24 h-24 rounded-2xl bg-white/20 flex items-center justify-center mx-auto mb-6">
-          <ListTodo className="w-12 h-12 text-white" />
+        {/* Premium Icon */}
+        <div className="relative w-28 h-28 mx-auto mb-6">
+          {/* Glow effect */}
+          <div className="absolute inset-0 rounded-3xl bg-gradient-to-br from-white/40 to-white/10 blur-xl" />
+          {/* Main container */}
+          <div className="relative w-full h-full rounded-3xl bg-gradient-to-br from-white/30 to-white/5 backdrop-blur-sm border border-white/30 shadow-2xl flex items-center justify-center overflow-hidden">
+            {/* Shine effect */}
+            <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/20 to-transparent" />
+            {/* Task list visual */}
+            <div className="relative flex flex-col gap-2">
+              <div className="flex items-center gap-2">
+                <CheckCircle2 className="w-6 h-6 text-white drop-shadow-lg" />
+                <div className="w-10 h-2 rounded-full bg-white/60" />
+              </div>
+              <div className="flex items-center gap-2">
+                <CheckCircle2 className="w-6 h-6 text-white drop-shadow-lg" />
+                <div className="w-8 h-2 rounded-full bg-white/60" />
+              </div>
+              <div className="flex items-center gap-2">
+                <Circle className="w-6 h-6 text-white/70 drop-shadow-lg" />
+                <div className="w-12 h-2 rounded-full bg-white/40" />
+              </div>
+            </div>
+            {/* Sparkle accent */}
+            <Sparkles className="absolute top-2 right-2 w-5 h-5 text-yellow-300 drop-shadow-lg" />
+          </div>
         </div>
         <h1 className="text-3xl font-extrabold text-white mb-2">Ежедневные платные задачи</h1>
         <p className="text-white/80 text-lg">
