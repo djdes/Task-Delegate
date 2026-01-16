@@ -239,9 +239,9 @@ export default function Dashboard() {
             >
               <RefreshCw className={`w-5 h-5 ${isRefreshing ? 'animate-spin' : ''}`} />
             </button>
-            <div>
-              <h1 className="text-lg font-bold text-white drop-shadow-sm">Ежедневные платные задачи</h1>
-              <p className="text-sm text-white/80 font-medium">
+            <div className="min-w-0 flex-1">
+              <h1 className="text-base sm:text-lg font-bold text-white drop-shadow-sm whitespace-nowrap truncate">Ежедневные задачи</h1>
+              <p className="text-sm text-white/80 font-medium truncate">
                 {user.name || user.phone}
                 {user.isAdmin && " (Админ)"}
               </p>
