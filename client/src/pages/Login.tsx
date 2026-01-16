@@ -79,7 +79,7 @@ export default function Login() {
         <div className="w-24 h-24 rounded-2xl bg-white/20 flex items-center justify-center mx-auto mb-6">
           <ListTodo className="w-12 h-12 text-white" />
         </div>
-        <h1 className="text-3xl font-extrabold text-white mb-2">Задачи</h1>
+        <h1 className="text-3xl font-extrabold text-white mb-2">Ежедневные платные задачи</h1>
         <p className="text-white/80 text-lg">
           Войдите по номеру телефона
         </p>
