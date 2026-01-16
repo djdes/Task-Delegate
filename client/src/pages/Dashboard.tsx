@@ -28,7 +28,9 @@ import {
   ChevronRight,
   Camera,
   Check,
-  RefreshCw
+  RefreshCw,
+  Menu,
+  X
 } from "lucide-react";
 import {
   Select,
@@ -64,6 +66,7 @@ export default function Dashboard() {
   const [duplicateTask, setDuplicateTask] = useState<typeof tasks[0] | null>(null);
   const [isDuplicateDialogOpen, setIsDuplicateDialogOpen] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   const handleRefresh = async () => {
     setIsRefreshing(true);
@@ -230,6 +233,16 @@ export default function Dashboard() {
       <header className="ozon-header">
         <div className="flex items-center justify-between max-w-6xl mx-auto lg:px-0">
           <div className="flex items-center gap-2.5">
+            {/* Menu button for mobile (non-admin) */}
+            {!user.isAdmin && (
+              <button
+                onClick={() => setIsMenuOpen(!isMenuOpen)}
+                className="lg:hidden p-2 rounded-xl bg-white/10 hover:bg-white/20 transition-colors"
+                aria-label="Меню"
+              >
+                {isMenuOpen ? <X className="w-5 h-5 text-white" /> : <Menu className="w-5 h-5 text-white" />}
+              </button>
+            )}
             {/* Refresh button */}
             <button
               onClick={handleRefresh}
@@ -240,7 +253,9 @@ export default function Dashboard() {
               <RefreshCw className={`w-5 h-5 ${isRefreshing ? 'animate-spin' : ''}`} />
             </button>
             <div className="min-w-0 flex-1">
-              <h1 className="text-base sm:text-lg font-bold text-white drop-shadow-sm whitespace-nowrap truncate">Ежедневные задачи</h1>
+              <h1 className="text-lg sm:text-xl font-black whitespace-nowrap truncate bg-gradient-to-r from-white via-yellow-200 to-white bg-[length:200%_100%] animate-[text-shimmer_3s_ease-in-out_infinite] bg-clip-text text-transparent">
+                Задачи
+              </h1>
               <p className="text-sm text-white/80 font-medium truncate">
                 {user.name || user.phone}
                 {user.isAdmin && " (Админ)"}
@@ -262,22 +277,53 @@ export default function Dashboard() {
         </div>
       </header>
 
-      {/* Progress bar */}
+      {/* Mobile dropdown menu for non-admin */}
+      {!user.isAdmin && isMenuOpen && (
+        <div className="lg:hidden absolute top-16 left-4 right-4 z-50 bg-white rounded-2xl shadow-xl border border-border overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
+          <button
+            className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-muted/50 transition-colors"
+            onClick={() => {
+              setIsMenuOpen(false);
+            }}
+          >
+            <Home className="w-5 h-5 text-primary" />
+            <span className="font-medium">Главная</span>
+          </button>
+          <div className="h-px bg-border" />
+          <button
+            className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-muted/50 transition-colors text-red-500"
+            onClick={() => {
+              setIsMenuOpen(false);
+              logout();
+            }}
+          >
+            <LogOut className="w-5 h-5" />
+            <span className="font-medium">Выход</span>
+          </button>
+        </div>
+      )}
+
+      {/* Progress bar - compact */}
       {totalCount > 0 && (
-        <div className="progress-section">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-sm font-medium text-foreground">
-              Выполнено {completedCount} из {totalCount}
-            </span>
-            <span className="text-sm font-bold text-primary">
+        <div className="px-4 py-2 max-w-6xl mx-auto">
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2 text-xs text-muted-foreground whitespace-nowrap">
+              <CheckCircle2 className="w-4 h-4 text-green-500" />
+              <span className="font-medium">{completedCount}/{totalCount}</span>
+            </div>
+            <div className="flex-1 h-1.5 bg-muted rounded-full overflow-hidden">
+              <div
+                className={`h-full rounded-full transition-all duration-500 ${
+                  completedCount === totalCount
+                    ? 'bg-gradient-to-r from-green-500 to-green-400'
+                    : 'bg-gradient-to-r from-primary to-primary/70'
+                }`}
+                style={{ width: `${(completedCount / totalCount) * 100}%` }}
+              />
+            </div>
+            <span className={`text-xs font-bold ${completedCount === totalCount ? 'text-green-500' : 'text-primary'}`}>
               {Math.round((completedCount / totalCount) * 100)}%
             </span>
-          </div>
-          <div className="h-2 bg-muted rounded-full overflow-hidden">
-            <div
-              className="h-full bg-gradient-to-r from-primary to-primary/80 rounded-full transition-all duration-500"
-              style={{ width: `${(completedCount / totalCount) * 100}%` }}
-            />
           </div>
         </div>
       )}
@@ -381,8 +427,8 @@ export default function Dashboard() {
 
                       {/* Task meta info */}
                       <div className="flex flex-wrap items-center gap-2 mt-1.5">
-                        {/* Worker badge */}
-                        {task.workerId && (
+                        {/* Worker badge - only for admin */}
+                        {user?.isAdmin && task.workerId && (
                           <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
                             <div className="user-avatar-sm">
                               {getUserInitials(task.workerId)}
@@ -501,15 +547,15 @@ export default function Dashboard() {
         </button>
       )}
 
-      {/* Bottom Navigation - compact for mobile */}
-      <nav className="ozon-bottom-nav">
-        <div className="flex items-center justify-around lg:flex-col lg:items-stretch lg:gap-1">
-          <button className="ozon-bottom-nav-item active">
-            <Home className="w-5 h-5" />
-            <span className="text-xs font-medium">Главная</span>
-          </button>
+      {/* Bottom Navigation - only for admin on mobile, hidden for regular users who use hamburger menu */}
+      {user?.isAdmin && (
+        <nav className="ozon-bottom-nav">
+          <div className="flex items-center justify-around lg:flex-col lg:items-stretch lg:gap-1">
+            <button className="ozon-bottom-nav-item active">
+              <Home className="w-5 h-5" />
+              <span className="text-xs font-medium">Главная</span>
+            </button>
 
-          {user?.isAdmin && (
             <button
               className="ozon-bottom-nav-item"
               onClick={() => setLocation("/admin/users")}
@@ -517,17 +563,17 @@ export default function Dashboard() {
               <Settings className="w-5 h-5" />
               <span className="text-xs font-medium">Настройки</span>
             </button>
-          )}
 
-          <button
-            className="ozon-bottom-nav-item"
-            onClick={() => logout()}
-          >
-            <LogOut className="w-5 h-5" />
-            <span className="text-xs font-medium">Выход</span>
-          </button>
-        </div>
-      </nav>
+            <button
+              className="ozon-bottom-nav-item"
+              onClick={() => logout()}
+            >
+              <LogOut className="w-5 h-5" />
+              <span className="text-xs font-medium">Выход</span>
+            </button>
+          </div>
+        </nav>
+      )}
 
       {/* Dialogs */}
       {user && (

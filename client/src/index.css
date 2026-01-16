@@ -128,7 +128,7 @@
   }
 
   .ozon-checkbox.checked {
-    @apply bg-primary border-primary;
+    @apply bg-green-500 border-green-500;
   }
 
   /* Ozon-style button */
@@ -375,5 +375,14 @@
   }
   100% {
     transform: translateX(200%);
+  }
+}
+
+@keyframes text-shimmer {
+  0% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: -100% 50%;
   }
 }
