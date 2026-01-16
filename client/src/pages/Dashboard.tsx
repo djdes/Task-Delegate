@@ -282,8 +282,8 @@ export default function Dashboard() {
         </div>
       )}
 
-      {/* Filters */}
-      {(categories.length > 0 || user?.isAdmin) && (
+      {/* Filters - only for admin */}
+      {user?.isAdmin && (
         <div className="filters-section">
           <div className="flex flex-wrap gap-3 max-w-6xl mx-auto lg:px-0">
             {categories.length > 0 && (
