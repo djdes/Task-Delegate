@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
@@ -24,9 +24,16 @@ type FormValues = z.infer<typeof formSchema>;
 
 export default function Login() {
   const [, setLocation] = useLocation();
-  const { login } = useAuth();
+  const { login, user, isLoading: authLoading } = useAuth();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
+
+  // Если пользователь уже авторизован - перенаправляем на dashboard
+  useEffect(() => {
+    if (!authLoading && user) {
+      setLocation("/dashboard");
+    }
+  }, [user, authLoading, setLocation]);
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -34,6 +41,18 @@ export default function Login() {
       phone: "+7",
     },
   });
+
+  // Показываем загрузку пока проверяем авторизацию
+  if (authLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-[#005bff]">
+        <div className="flex flex-col items-center gap-3">
+          <div className="w-8 h-8 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+          <span className="text-sm text-white/80">Загрузка...</span>
+        </div>
+      </div>
+    );
+  }
 
   const onSubmit = async (values: FormValues) => {
     setIsLoading(true);
@@ -43,7 +62,7 @@ export default function Login() {
         title: "Успешно",
         description: "Вы успешно авторизовались",
       });
-      setLocation("/");
+      setLocation("/dashboard");
     } catch (error: any) {
       toast({
         title: "Ошибка",
@@ -56,47 +75,46 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-muted/20 to-background p-4">
-      <div className="w-full max-w-md">
-        <div className="bg-card/80 backdrop-blur-sm rounded-2xl border border-border/50 shadow-xl p-8 space-y-8">
-          <div className="text-center space-y-2">
-            <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center mx-auto mb-4 shadow-lg shadow-primary/20">
-              <CheckCircle2 className="w-8 h-8 text-primary-foreground" />
-            </div>
-            <h1 className="text-3xl font-bold bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">Вход</h1>
-            <p className="text-muted-foreground text-sm">
-              Введите номер телефона для входа
-            </p>
-          </div>
+    <div className="min-h-screen flex flex-col bg-[#005bff]">
+      {/* Header */}
+      <div className="pt-12 pb-8 px-6 text-center">
+        <div className="w-20 h-20 rounded-full bg-white flex items-center justify-center mx-auto mb-6 shadow-lg">
+          <CheckCircle2 className="w-10 h-10 text-[#005bff]" />
+        </div>
+        <h1 className="text-3xl font-bold text-white mb-2">Вход в аккаунт</h1>
+        <p className="text-white/80 text-lg">
+          Введите номер телефона
+        </p>
+      </div>
 
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
+      {/* Form Card */}
+      <div className="flex-1 bg-white rounded-t-[32px] px-6 pt-10 pb-8">
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
             <FormField
               control={form.control}
               name="phone"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Номер телефона</FormLabel>
+                  <FormLabel className="text-lg font-medium text-gray-700 mb-3 block">
+                    Номер телефона
+                  </FormLabel>
                   <FormControl>
                     <Input
                       type="tel"
-                      placeholder="xxxxxxxxx"
-                      className="things-input"
+                      placeholder="xxx xxx xx xx"
+                      className="h-16 text-2xl font-medium tracking-wide border-2 border-gray-200 rounded-2xl px-5 focus:border-[#005bff] focus:ring-[#005bff] transition-colors"
                       value={field.value}
                       onChange={(e) => {
                         let value = e.target.value;
-                        // Убеждаемся, что начинается с +7
                         if (!value.startsWith("+7")) {
                           value = "+7" + value.replace(/^\+?7?/, "");
                         }
-                        // Удаляем все кроме цифр после +7
                         const digits = value.slice(2).replace(/\D/g, "");
-                        // Ограничиваем до 10 цифр
                         const limitedDigits = digits.slice(0, 10);
                         field.onChange("+7" + limitedDigits);
                       }}
                       onKeyDown={(e) => {
-                        // Запрещаем удаление +7
                         if (e.key === "Backspace") {
                           const cursorPos = (e.target as HTMLInputElement).selectionStart || 0;
                           if (cursorPos <= 2) {
@@ -104,7 +122,6 @@ export default function Login() {
                             return;
                           }
                         }
-                        // Запрещаем удаление через Delete если курсор перед +7
                         if (e.key === "Delete") {
                           const cursorPos = (e.target as HTMLInputElement).selectionStart || 0;
                           if (cursorPos < 2) {
@@ -114,7 +131,6 @@ export default function Login() {
                         }
                       }}
                       onFocus={(e) => {
-                        // Если поле пустое или только +7, устанавливаем курсор после +7
                         if (field.value === "+7" || field.value === "") {
                           setTimeout(() => {
                             e.target.setSelectionRange(2, 2);
@@ -123,30 +139,24 @@ export default function Login() {
                       }}
                     />
                   </FormControl>
-                  <FormMessage />
+                  <FormMessage className="text-base mt-2" />
                 </FormItem>
               )}
             />
 
-              <Button
-                type="submit"
-                className="w-full bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary shadow-lg hover:shadow-xl transition-all"
-                disabled={isLoading}
-              >
-                {isLoading ? "Вход..." : "Войти"}
-              </Button>
-            </form>
-          </Form>
-
-          <div className="text-center pt-4 border-t border-border/50">
-            <button
-              onClick={() => setLocation("/")}
-              className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+            <Button
+              type="submit"
+              className="w-full h-16 text-xl font-semibold bg-[#005bff] hover:bg-[#004de6] rounded-2xl shadow-lg transition-all active:scale-[0.98]"
+              disabled={isLoading}
             >
-              Продолжить без авторизации
-            </button>
-          </div>
-        </div>
+              {isLoading ? "Вход..." : "Продолжить"}
+            </Button>
+          </form>
+        </Form>
+
+        <p className="mt-8 text-center text-sm text-gray-400 leading-relaxed">
+          Нажимая «Продолжить», вы соглашаетесь с условиями использования сервиса
+        </p>
       </div>
     </div>
   );

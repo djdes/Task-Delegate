@@ -1,6 +1,7 @@
 import "dotenv/config";
 import express, { type Request, Response, NextFunction } from "express";
 import session from "express-session";
+import createMemoryStore from "memorystore";
 import path from "path";
 import { existsSync, mkdirSync } from "fs";
 import { registerRoutes } from "./routes";
@@ -10,16 +11,23 @@ import { createServer } from "http";
 const app = express();
 const httpServer = createServer(app);
 
+// Настройка хранилища сессий
+const MemoryStore = createMemoryStore(session);
+
 // Настройка сессий
 app.use(
   session({
     secret: process.env.SESSION_SECRET || "your-secret-key-change-in-production",
     resave: false,
     saveUninitialized: false,
+    store: new MemoryStore({
+      checkPeriod: 86400000, // Очистка просроченных сессий каждые 24 часа
+    }),
     cookie: {
-      secure: process.env.NODE_ENV === "production",
+      secure: false, // В dev режиме должен быть false для работы без HTTPS
       httpOnly: true,
       maxAge: 30 * 24 * 60 * 60 * 1000, // 30 дней
+      sameSite: "lax",
     },
   })
 );

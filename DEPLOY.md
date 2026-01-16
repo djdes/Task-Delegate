@@ -1,0 +1,42 @@
+# Инструкция по развертыванию на хостинге
+
+## Проблема: 404 ошибки для API запросов
+
+Если вы получаете ошибки типа `GET https://tasks.magday.ru/api/users 404 (Not Found)`, это означает, что веб-сервер (nginx/apache) не настроен для проксирования запросов к Node.js серверу.
+
+## Решение
+
+### Вариант 1: Nginx
+
+1. Подключитесь по SSH к серверу
+2. Найдите конфигурационный файл nginx для вашего домена (обычно в `/etc/nginx/sites-available/tasks.magday.ru` или `/etc/nginx/conf.d/tasks.magday.ru.conf`)
+3. Добавьте или обновите конфигурацию (см. `nginx.conf.example`)
+4. Перезагрузите nginx: `sudo nginx -t && sudo systemctl reload nginx`
+
+### Вариант 2: Apache
+
+1. Подключитесь по SSH к серверу
+2. Убедитесь, что включены модули: `sudo a2enmod proxy proxy_http rewrite`
+3. Создайте или обновите `.htaccess` файл в корне проекта (см. `.htaccess.example`)
+4. Перезагрузите apache: `sudo systemctl reload apache2`
+
+### Вариант 3: PM2 (рекомендуется для Node.js)
+
+1. Установите PM2: `npm install -g pm2`
+2. Соберите проект: `npm run build`
+3. Запустите сервер через PM2: `pm2 start dist/index.cjs --name task-delegate`
+4. Сохраните конфигурацию: `pm2 save`
+5. Настройте автозапуск: `pm2 startup`
+
+### Проверка
+
+1. Убедитесь, что Node.js сервер запущен на порту 5000 (или PORT из .env)
+2. Проверьте, что переменные окружения в `.env` настроены правильно
+3. Проверьте логи: `pm2 logs task-delegate` или `journalctl -u your-service`
+
+## Важные моменты
+
+- Убедитесь, что `NODE_ENV=production` в `.env`
+- Проверьте, что порт в `.env` совпадает с портом в конфигурации веб-сервера
+- Убедитесь, что база данных доступна с хостинга
+- Проверьте права доступа к папке `uploads/`

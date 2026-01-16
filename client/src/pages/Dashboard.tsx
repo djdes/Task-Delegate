@@ -37,22 +37,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { loginSchema } from "@shared/schema";
-import { z } from "zod";
 import { useToast } from "@/hooks/use-toast";
-
-const formSchema = loginSchema;
-type FormValues = z.infer<typeof formSchema>;
 
 const WEEK_DAY_SHORT_NAMES: { [key: number]: string } = {
   0: "Вс",
@@ -66,12 +51,11 @@ const WEEK_DAY_SHORT_NAMES: { [key: number]: string } = {
 
 export default function Dashboard() {
   const [, setLocation] = useLocation();
-  const { user, logout, login } = useAuth();
+  const { user, logout, isLoading: authLoading } = useAuth();
   const queryClient = useQueryClient();
   const { data: users = [] } = useUsers();
   const { data: tasks = [], isLoading: loadingTasks } = useTasks();
   const { toast } = useToast();
-  const [isLoading, setIsLoading] = useState(false);
   
   const [selectedTask, setSelectedTask] = useState<typeof tasks[0] | null>(null);
   const [isTaskDialogOpen, setIsTaskDialogOpen] = useState(false);
@@ -100,32 +84,6 @@ export default function Dashboard() {
   const deleteTask = useDeleteTask();
   const completeTask = useCompleteTask();
   const uncompleteTask = useUncompleteTask();
-
-  const form = useForm<FormValues>({
-    resolver: zodResolver(formSchema),
-    defaultValues: {
-      phone: "+7",
-    },
-  });
-
-  const onSubmit = async (values: FormValues) => {
-    setIsLoading(true);
-    try {
-      await login(values.phone);
-      toast({
-        title: "Успешно",
-        description: "Вы успешно авторизовались",
-      });
-    } catch (error: any) {
-      toast({
-        title: "Ошибка",
-        description: error.message || "Пользователь с таким номером не найден",
-        variant: "destructive",
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
   const getUserName = (userId: number | null) => {
     if (!userId) return "Не назначен";
@@ -232,94 +190,27 @@ export default function Dashboard() {
     queryClient.invalidateQueries({ queryKey: ["tasks"] });
   };
 
-  // Если пользователь не авторизован - показываем только форму входа
-  if (!user) {
+  // Если пользователь не авторизован - перенаправляем на страницу входа
+  useEffect(() => {
+    if (!authLoading && !user) {
+      setLocation("/");
+    }
+  }, [user, authLoading, setLocation]);
+
+  // Показываем загрузку пока проверяем авторизацию
+  if (authLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-muted/20 to-background p-4">
-        <div className="w-full max-w-md">
-          <div className="bg-card/80 backdrop-blur-sm rounded-2xl border border-border/50 shadow-xl p-8 space-y-6">
-            <div className="text-center space-y-2">
-              <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center mx-auto mb-4 shadow-lg shadow-primary/20">
-                <CheckCircle2 className="w-8 h-8 text-primary-foreground" />
-              </div>
-              <h1 className="text-3xl font-bold bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">Авторизация</h1>
-              <p className="text-muted-foreground text-sm">
-                Введите номер телефона для входа в систему
-              </p>
-            </div>
-
-            <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
-                <FormField
-                  control={form.control}
-                  name="phone"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Номер телефона</FormLabel>
-                      <FormControl>
-                        <Input
-                          type="tel"
-                          placeholder="xxxxxxxxx"
-                          className="things-input"
-                          value={field.value}
-                          onChange={(e) => {
-                            let value = e.target.value;
-                            // Убеждаемся, что начинается с +7
-                            if (!value.startsWith("+7")) {
-                              value = "+7" + value.replace(/^\+?7?/, "");
-                            }
-                            // Удаляем все кроме цифр после +7
-                            const digits = value.slice(2).replace(/\D/g, "");
-                            // Ограничиваем до 10 цифр
-                            const limitedDigits = digits.slice(0, 10);
-                            field.onChange("+7" + limitedDigits);
-                          }}
-                          onKeyDown={(e) => {
-                            // Запрещаем удаление +7
-                            if (e.key === "Backspace") {
-                              const cursorPos = (e.target as HTMLInputElement).selectionStart || 0;
-                              if (cursorPos <= 2) {
-                                e.preventDefault();
-                                return;
-                              }
-                            }
-                            // Запрещаем удаление через Delete если курсор перед +7
-                            if (e.key === "Delete") {
-                              const cursorPos = (e.target as HTMLInputElement).selectionStart || 0;
-                              if (cursorPos < 2) {
-                                e.preventDefault();
-                                return;
-                              }
-                            }
-                          }}
-                          onFocus={(e) => {
-                            // Если поле пустое или только +7, устанавливаем курсор после +7
-                            if (field.value === "+7" || field.value === "") {
-                              setTimeout(() => {
-                                e.target.setSelectionRange(2, 2);
-                              }, 0);
-                            }
-                          }}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <Button
-                  type="submit"
-                  className="w-full bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary shadow-lg hover:shadow-xl transition-all"
-                  disabled={isLoading}
-                >
-                  {isLoading ? "Вход..." : "Войти"}
-                </Button>
-              </form>
-            </Form>
-          </div>
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="flex flex-col items-center gap-3">
+          <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
+          <span className="text-sm text-muted-foreground">Проверка авторизации...</span>
         </div>
       </div>
     );
+  }
+
+  if (!user) {
+    return null;
   }
 
   if (loadingTasks) {
@@ -373,16 +264,6 @@ export default function Dashboard() {
                   className="text-xs text-muted-foreground hover:text-primary mt-1.5 transition-colors"
                 >
                   Выйти
-                </button>
-              </div>
-            )}
-            {!user && (
-              <div className="mt-4">
-                <button
-                  onClick={() => setLocation("/login")}
-                  className="w-full text-sm px-3 py-2 rounded-lg bg-primary/10 text-primary hover:bg-primary/20 transition-colors font-medium"
-                >
-                  Войти
                 </button>
               </div>
             )}

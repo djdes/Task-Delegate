@@ -1,0 +1,19 @@
+# Apache конфигурация для проксирования API запросов
+# Требуется включить mod_proxy и mod_proxy_http
+
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    
+    # Проксирование API запросов к Node.js серверу
+    RewriteCond %{REQUEST_URI} ^/api [NC]
+    RewriteRule ^(.*)$ http://localhost:5000/$1 [P,L]
+    
+    # Проксирование загрузок
+    RewriteCond %{REQUEST_URI} ^/uploads [NC]
+    RewriteRule ^(.*)$ http://localhost:5000/$1 [P,L]
+    
+    # Все остальные запросы к Node.js (для SPA)
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteRule ^(.*)$ http://localhost:5000/$1 [P,L]
+</IfModule>
