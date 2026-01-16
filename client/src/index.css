@@ -108,18 +108,18 @@
     @apply shadow-md;
   }
 
-  /* Large task card for mobile */
+  /* Task card - compact for better readability */
   .task-card {
-    @apply bg-card rounded-2xl p-4 shadow-sm active:scale-[0.98] transition-all duration-150;
+    @apply bg-card rounded-2xl p-4 shadow-sm border border-border/50 active:scale-[0.99] transition-all duration-150 hover:shadow-md;
   }
 
   .task-card-completed {
-    @apply bg-muted/50;
+    @apply bg-muted/30 border-muted;
   }
 
-  /* Ozon-style checkbox - large for mobile */
+  /* Ozon-style checkbox */
   .ozon-checkbox {
-    @apply w-7 h-7 rounded-full border-2 border-border flex items-center justify-center
+    @apply w-6 h-6 rounded-full border-2 border-border flex items-center justify-center
            transition-all duration-150 cursor-pointer flex-shrink-0;
   }
 
@@ -133,11 +133,11 @@
 
   /* Ozon-style button */
   .ozon-btn {
-    @apply h-12 px-6 rounded-xl font-semibold text-base transition-all duration-150 active:scale-[0.98];
+    @apply h-14 px-8 rounded-2xl font-bold text-lg transition-all duration-150 active:scale-[0.98];
   }
 
   .ozon-btn-primary {
-    @apply bg-primary text-primary-foreground hover:bg-primary/90;
+    @apply bg-primary text-primary-foreground hover:bg-primary/90 shadow-md shadow-primary/20;
   }
 
   .ozon-btn-secondary {
@@ -146,7 +146,7 @@
 
   /* Refresh button */
   .refresh-btn {
-    @apply w-12 h-12 rounded-2xl bg-white/20 flex items-center justify-center
+    @apply w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center
            transition-all duration-200 active:scale-90 hover:bg-white/30;
   }
 
@@ -154,20 +154,14 @@
     @apply opacity-70;
   }
 
-  @media (min-width: 1024px) {
-    .refresh-btn {
-      @apply w-11 h-11;
-    }
-  }
-
   /* Ozon-style header */
   .ozon-header {
-    @apply sticky top-0 z-50 bg-primary text-primary-foreground px-4 py-3 shadow-md;
+    @apply sticky top-0 z-50 bg-primary text-white px-4 py-3 shadow-md;
   }
 
   @media (min-width: 1024px) {
     .ozon-header {
-      @apply px-8 py-4;
+      @apply px-6 py-4;
     }
   }
 
@@ -184,23 +178,23 @@
 
   /* Desktop content container */
   .desktop-content {
-    @apply px-4 py-4 pb-24;
+    @apply px-4 py-3 pb-16;
   }
 
   @media (min-width: 1024px) {
     .desktop-content {
-      @apply px-8 py-6 pb-8 max-w-6xl mx-auto;
+      @apply px-6 py-4 pb-6 max-w-6xl mx-auto;
     }
   }
 
-  /* Task grid for desktop */
+  /* Task grid */
   .task-grid {
-    @apply space-y-3;
+    @apply space-y-2;
   }
 
   @media (min-width: 768px) {
     .task-grid {
-      @apply grid grid-cols-2 gap-4 space-y-0;
+      @apply grid grid-cols-2 gap-3 space-y-0;
     }
   }
 
@@ -210,26 +204,26 @@
     }
   }
 
-  /* Bottom navigation for mobile, sidebar for desktop */
+  /* Bottom navigation - compact for mobile */
   .ozon-bottom-nav {
-    @apply fixed bottom-0 left-0 right-0 bg-card border-t border-border px-2 py-2 z-50;
-    padding-bottom: calc(0.5rem + env(safe-area-inset-bottom, 0));
+    @apply fixed bottom-0 left-0 right-0 bg-card border-t border-border px-2 py-1 z-50;
+    padding-bottom: calc(0.25rem + env(safe-area-inset-bottom, 0));
   }
 
   @media (min-width: 1024px) {
     .ozon-bottom-nav {
-      @apply fixed left-0 top-0 bottom-0 right-auto w-64 border-t-0 border-r border-border pt-20 px-4;
+      @apply fixed left-0 top-0 bottom-0 right-auto w-56 border-t-0 border-r border-border pt-16 px-3;
       padding-bottom: 0;
     }
   }
 
   .ozon-bottom-nav-item {
-    @apply flex flex-col items-center justify-center gap-1 py-2 px-3 rounded-xl transition-colors;
+    @apply flex flex-col items-center justify-center gap-0.5 py-1.5 px-2 rounded-lg transition-colors;
   }
 
   @media (min-width: 1024px) {
     .ozon-bottom-nav-item {
-      @apply flex-row justify-start gap-3 py-3 px-4 w-full;
+      @apply flex-row justify-start gap-2 py-2.5 px-3 w-full;
     }
 
     .ozon-bottom-nav-item span {
@@ -269,20 +263,20 @@
 
   /* User avatar */
   .user-avatar {
-    @apply w-10 h-10 rounded-full bg-gradient-to-br from-primary to-primary/60 flex items-center justify-center text-primary-foreground font-semibold;
+    @apply w-10 h-10 rounded-full bg-gradient-to-br from-primary to-primary/60 flex items-center justify-center text-primary-foreground font-bold;
   }
 
   .user-avatar-sm {
-    @apply w-6 h-6 rounded-full bg-gradient-to-br from-primary to-primary/60 flex items-center justify-center text-primary-foreground text-xs font-medium;
+    @apply w-6 h-6 rounded-full bg-gradient-to-br from-primary to-primary/60 flex items-center justify-center text-primary-foreground text-xs font-semibold;
   }
 
   /* Empty state */
   .empty-state {
-    @apply flex flex-col items-center justify-center py-16 px-4 text-center;
+    @apply flex flex-col items-center justify-center py-20 px-6 text-center;
   }
 
   .empty-state-icon {
-    @apply w-24 h-24 rounded-full bg-muted flex items-center justify-center mb-6;
+    @apply w-28 h-28 rounded-full bg-muted flex items-center justify-center mb-8 shadow-inner;
   }
 
   /* Legacy support */
@@ -314,25 +308,25 @@
     }
   }
 
-  /* Progress section for desktop */
+  /* Progress section */
   .progress-section {
     @apply px-4 py-3 bg-card border-b border-border;
   }
 
   @media (min-width: 1024px) {
     .progress-section {
-      @apply px-8 py-4 rounded-2xl border shadow-sm mx-8 mt-6 mb-2;
+      @apply px-6 py-4 rounded-xl border shadow-sm mx-6 mt-4 mb-2;
     }
   }
 
-  /* Filters section for desktop */
+  /* Filters section */
   .filters-section {
-    @apply px-4 py-3 bg-card border-b border-border;
+    @apply px-4 py-2 bg-card border-b border-border;
   }
 
   @media (min-width: 1024px) {
     .filters-section {
-      @apply px-8 py-4 bg-transparent border-0;
+      @apply px-6 py-3 bg-transparent border-0;
     }
   }
 }

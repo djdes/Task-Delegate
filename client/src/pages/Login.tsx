@@ -56,10 +56,6 @@ export default function Login() {
     setIsLoading(true);
     try {
       await login(values.phone);
-      toast({
-        title: "Успешно",
-        description: "Вы успешно авторизовались",
-      });
       setLocation("/dashboard");
     } catch (error: any) {
       toast({

@@ -229,7 +229,7 @@ export default function Dashboard() {
       {/* Header - Ozon style */}
       <header className="ozon-header">
         <div className="flex items-center justify-between max-w-6xl mx-auto lg:px-0">
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2.5">
             {/* Refresh button */}
             <button
               onClick={handleRefresh}
@@ -237,11 +237,11 @@ export default function Dashboard() {
               className="refresh-btn"
               aria-label="Обновить"
             >
-              <RefreshCw className={`w-6 h-6 ${isRefreshing ? 'animate-spin' : ''}`} />
+              <RefreshCw className={`w-5 h-5 ${isRefreshing ? 'animate-spin' : ''}`} />
             </button>
             <div>
-              <h1 className="text-lg font-bold">Задачи</h1>
-              <p className="text-sm text-white/80">
+              <h1 className="text-lg font-bold text-white drop-shadow-sm">Ежедневные платные задачи</h1>
+              <p className="text-sm text-white/80 font-medium">
                 {user.name || user.phone}
                 {user.isAdmin && " (Админ)"}
               </p>
@@ -251,9 +251,9 @@ export default function Dashboard() {
           {/* Bonus balance for workers */}
           {!user.isAdmin && (user as any).bonusBalance > 0 && (
             <div className="bg-white/20 rounded-xl px-3 py-2">
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1.5">
                 <Coins className="w-5 h-5 text-yellow-300" />
-                <span className="font-bold">{(user as any).bonusBalance} ₽</span>
+                <span className="text-base font-bold text-white">{(user as any).bonusBalance} ₽</span>
               </div>
             </div>
           )}
@@ -273,7 +273,7 @@ export default function Dashboard() {
           </div>
           <div className="h-2 bg-muted rounded-full overflow-hidden">
             <div
-              className="h-full bg-primary rounded-full transition-all duration-500"
+              className="h-full bg-gradient-to-r from-primary to-primary/80 rounded-full transition-all duration-500"
               style={{ width: `${(completedCount / totalCount) * 100}%` }}
             />
           </div>
@@ -283,11 +283,11 @@ export default function Dashboard() {
       {/* Filters */}
       {(categories.length > 0 || user?.isAdmin) && (
         <div className="filters-section">
-          <div className="flex flex-wrap gap-2 max-w-6xl mx-auto lg:px-0">
+          <div className="flex flex-wrap gap-3 max-w-6xl mx-auto lg:px-0">
             {categories.length > 0 && (
               <Select value={filterByCategory} onValueChange={setFilterByCategory}>
-                <SelectTrigger className="h-10 w-auto min-w-[140px] rounded-xl">
-                  <Tag className="w-4 h-4 mr-2 text-muted-foreground" />
+                <SelectTrigger className="h-10 w-auto min-w-[140px] rounded-xl text-sm font-medium">
+                  <Tag className="w-4 h-4 mr-1.5 text-muted-foreground" />
                   <SelectValue placeholder="Категория" />
                 </SelectTrigger>
                 <SelectContent>
@@ -304,8 +304,8 @@ export default function Dashboard() {
 
             {user?.isAdmin && (
               <Select value={filterByUserId} onValueChange={setFilterByUserId}>
-                <SelectTrigger className="h-10 w-auto min-w-[160px] rounded-xl">
-                  <Filter className="w-4 h-4 mr-2 text-muted-foreground" />
+                <SelectTrigger className="h-10 w-auto min-w-[150px] rounded-xl text-sm font-medium">
+                  <Filter className="w-4 h-4 mr-1.5 text-muted-foreground" />
                   <SelectValue placeholder="Исполнитель" />
                 </SelectTrigger>
                 <SelectContent>
@@ -328,10 +328,10 @@ export default function Dashboard() {
         {filteredTasks.length === 0 ? (
           <div className="empty-state">
             <div className="empty-state-icon">
-              <Inbox className="w-12 h-12 text-muted-foreground" />
+              <Inbox className="w-16 h-16 text-muted-foreground" />
             </div>
-            <h3 className="text-xl font-bold text-foreground mb-2">Нет задач</h3>
-            <p className="text-base text-muted-foreground mb-6 max-w-xs">
+            <h3 className="text-2xl font-black text-foreground mb-3">Нет задач</h3>
+            <p className="text-lg text-muted-foreground mb-8 max-w-sm">
               {user?.isAdmin
                 ? "Создайте первую задачу для начала работы"
                 : "Вам пока не назначили задач"}
@@ -339,9 +339,9 @@ export default function Dashboard() {
             {user?.isAdmin && (
               <button
                 onClick={() => setLocation("/tasks/new")}
-                className="ozon-btn ozon-btn-primary flex items-center gap-2"
+                className="ozon-btn ozon-btn-primary flex items-center gap-3"
               >
-                <Plus className="w-5 h-5" />
+                <Plus className="w-6 h-6" />
                 Создать задачу
               </button>
             )}
@@ -360,46 +360,46 @@ export default function Dashboard() {
                   className={`task-card ${isCompleted ? 'task-card-completed' : ''}`}
                   onClick={() => handleTaskClick(task)}
                 >
-                  <div className="flex items-start gap-4">
-                    {/* Large checkbox */}
+                  <div className="flex items-start gap-3">
+                    {/* Checkbox */}
                     <button
                       onClick={(e) => toggleTaskComplete(task.id, e)}
                       className={`ozon-checkbox mt-0.5 ${isCompleted ? 'checked' : ''}`}
                     >
                       {isCompleted && (
-                        <Check className="w-5 h-5 text-primary-foreground" />
+                        <Check className="w-4 h-4 text-primary-foreground" />
                       )}
                     </button>
 
                     {/* Content */}
                     <div className="flex-1 min-w-0">
-                      <h3 className={`text-base font-semibold mb-1 ${isCompleted ? 'line-through text-muted-foreground' : 'text-foreground'}`}>
+                      <h3 className={`text-base font-semibold ${isCompleted ? 'line-through text-muted-foreground' : 'text-foreground'}`}>
                         {task.title}
                       </h3>
 
                       {/* Task meta info */}
-                      <div className="flex flex-wrap items-center gap-2 mt-2">
+                      <div className="flex flex-wrap items-center gap-2 mt-1.5">
                         {/* Worker badge */}
                         {task.workerId && (
                           <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
                             <div className="user-avatar-sm">
                               {getUserInitials(task.workerId)}
                             </div>
-                            <span>{getUserName(task.workerId)}</span>
+                            <span className="font-medium">{getUserName(task.workerId)}</span>
                           </div>
                         )}
 
                         {/* Photo required indicator */}
                         {requiresPhoto && !isCompleted && (
-                          <div className="flex items-center gap-1 text-sm text-orange-500">
+                          <div className="flex items-center gap-1 text-sm text-orange-500 font-medium">
                             <Camera className="w-4 h-4" />
-                            <span>Нужно фото</span>
+                            <span>Фото</span>
                           </div>
                         )}
                       </div>
 
                       {/* Badges row */}
-                      <div className="flex flex-wrap items-center gap-2 mt-3">
+                      <div className="flex flex-wrap items-center gap-2 mt-2">
                         {hasPrice && (
                           <div className="price-badge">
                             <Coins className="w-4 h-4" />
@@ -416,8 +416,8 @@ export default function Dashboard() {
 
                         {/* Schedule info for admin */}
                         {user?.isAdmin && (task as any).weekDays && (task as any).weekDays.length > 0 && (
-                          <div className="flex items-center gap-1 text-xs text-muted-foreground bg-muted px-2 py-1 rounded-lg">
-                            <Calendar className="w-3.5 h-3.5" />
+                          <div className="flex items-center gap-1.5 text-sm font-medium text-muted-foreground bg-muted px-3 py-1.5 rounded-xl">
+                            <Calendar className="w-4 h-4" />
                             <span>
                               {((task as any).weekDays as number[])
                                 .sort((a, b) => (a === 0 ? 7 : a) - (b === 0 ? 7 : b))
@@ -428,8 +428,8 @@ export default function Dashboard() {
                         )}
 
                         {user?.isAdmin && (task as any).monthDay && (
-                          <div className="flex items-center gap-1 text-xs text-muted-foreground bg-muted px-2 py-1 rounded-lg">
-                            <CalendarDays className="w-3.5 h-3.5" />
+                          <div className="flex items-center gap-1.5 text-sm font-medium text-muted-foreground bg-muted px-3 py-1.5 rounded-xl">
+                            <CalendarDays className="w-4 h-4" />
                             <span>{(task as any).monthDay} число</span>
                           </div>
                         )}
@@ -495,15 +495,15 @@ export default function Dashboard() {
           onClick={() => setLocation("/tasks/new")}
           className="things-fab"
         >
-          <Plus className="w-6 h-6" />
+          <Plus className="w-7 h-7" />
         </button>
       )}
 
-      {/* Bottom Navigation - Ozon style (sidebar on desktop) */}
+      {/* Bottom Navigation - compact for mobile */}
       <nav className="ozon-bottom-nav">
-        <div className="flex items-center justify-around lg:flex-col lg:items-stretch lg:gap-2">
+        <div className="flex items-center justify-around lg:flex-col lg:items-stretch lg:gap-1">
           <button className="ozon-bottom-nav-item active">
-            <Home className="w-6 h-6" />
+            <Home className="w-5 h-5" />
             <span className="text-xs font-medium">Главная</span>
           </button>
 
@@ -512,7 +512,7 @@ export default function Dashboard() {
               className="ozon-bottom-nav-item"
               onClick={() => setLocation("/admin/users")}
             >
-              <Settings className="w-6 h-6" />
+              <Settings className="w-5 h-5" />
               <span className="text-xs font-medium">Настройки</span>
             </button>
           )}
@@ -521,7 +521,7 @@ export default function Dashboard() {
             className="ozon-bottom-nav-item"
             onClick={() => logout()}
           >
-            <LogOut className="w-6 h-6" />
+            <LogOut className="w-5 h-5" />
             <span className="text-xs font-medium">Выход</span>
           </button>
         </div>
