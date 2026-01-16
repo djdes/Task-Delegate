@@ -8,6 +8,8 @@ export interface IStorage {
   createUser(user: InsertUser): Promise<User>;
   getUserById(id: number): Promise<User | undefined>;
   getAllUsers(): Promise<User[]>;
+  updateUserBalance(id: number, amount: number): Promise<User | undefined>;
+  resetUserBalance(id: number): Promise<User | undefined>;
 
   getWorkers(): Promise<Worker[]>;
   getWorker(id: number): Promise<Worker | undefined>;
@@ -53,6 +55,23 @@ export class DatabaseStorage implements IStorage {
     return await db.select().from(users);
   }
 
+  async updateUserBalance(id: number, amount: number): Promise<User | undefined> {
+    const [existingUser] = await db.select().from(users).where(eq(users.id, id));
+    if (!existingUser) return undefined;
+
+    const newBalance = (existingUser.bonusBalance || 0) + amount;
+    await db.update(users).set({ bonusBalance: newBalance }).where(eq(users.id, id));
+
+    const [user] = await db.select().from(users).where(eq(users.id, id));
+    return user || undefined;
+  }
+
+  async resetUserBalance(id: number): Promise<User | undefined> {
+    await db.update(users).set({ bonusBalance: 0 }).where(eq(users.id, id));
+    const [user] = await db.select().from(users).where(eq(users.id, id));
+    return user || undefined;
+  }
+
   async getWorkers(): Promise<Worker[]> {
     return await db.select().from(workers);
   }
@@ -90,6 +109,9 @@ export class DatabaseStorage implements IStorage {
       weekDays: tasks.weekDays,
       monthDay: tasks.monthDay,
       isRecurring: tasks.isRecurring,
+      price: tasks.price,
+      category: tasks.category,
+      description: tasks.description,
     }).from(tasks);
     // Парсим weekDays из JSON строки в массив
     return result.map(task => ({
@@ -109,6 +131,9 @@ export class DatabaseStorage implements IStorage {
       weekDays: tasks.weekDays,
       monthDay: tasks.monthDay,
       isRecurring: tasks.isRecurring,
+      price: tasks.price,
+      category: tasks.category,
+      description: tasks.description,
     }).from(tasks).where(eq(tasks.id, id));
     if (!task) return undefined;
     return {
@@ -124,6 +149,9 @@ export class DatabaseStorage implements IStorage {
       weekDays: insertTask.weekDays ? JSON.stringify(insertTask.weekDays) : null,
       monthDay: insertTask.monthDay ?? null,
       isRecurring: insertTask.isRecurring ?? true,
+      price: insertTask.price ?? 0,
+      category: insertTask.category ?? null,
+      description: insertTask.description ?? null,
     };
     const [result] = await db.insert(tasks).values(taskData as any);
     const insertId = (result as any).insertId;
@@ -137,6 +165,9 @@ export class DatabaseStorage implements IStorage {
       weekDays: tasks.weekDays,
       monthDay: tasks.monthDay,
       isRecurring: tasks.isRecurring,
+      price: tasks.price,
+      category: tasks.category,
+      description: tasks.description,
     }).from(tasks).where(eq(tasks.id, insertId));
     return {
       ...task,
@@ -169,6 +200,9 @@ export class DatabaseStorage implements IStorage {
       weekDays: tasks.weekDays,
       monthDay: tasks.monthDay,
       isRecurring: tasks.isRecurring,
+      price: tasks.price,
+      category: tasks.category,
+      description: tasks.description,
     }).from(tasks).where(eq(tasks.id, id));
     if (!task) return undefined;
     return {

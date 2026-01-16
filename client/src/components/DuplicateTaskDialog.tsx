@@ -4,8 +4,9 @@ import { useCreateTask } from "@/hooks/use-tasks";
 import { useUsers } from "@/hooks/use-users";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Calendar, RefreshCw, Copy, CalendarDays } from "lucide-react";
+import { Calendar, RefreshCw, Copy, CalendarDays, Coins, Tag, FileText } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
@@ -39,6 +40,9 @@ const formSchema = insertTaskSchema.extend({
   weekDays: z.array(z.number()).nullable().optional(),
   monthDay: z.string().optional().transform(val => val ? parseInt(val, 10) : null),
   isRecurring: z.boolean().optional().default(true),
+  price: z.string().optional().transform(val => val ? parseInt(val, 10) : 0),
+  category: z.string().optional().transform(val => val && val.trim() ? val.trim() : null),
+  description: z.string().optional().transform(val => val && val.trim() ? val.trim() : null),
 });
 
 type FormValues = z.input<typeof formSchema>;
@@ -61,6 +65,9 @@ interface Task {
   weekDays?: number[] | null;
   monthDay?: number | null;
   isRecurring?: boolean;
+  price?: number;
+  category?: string | null;
+  description?: string | null;
 }
 
 interface DuplicateTaskDialogProps {
@@ -84,6 +91,9 @@ export function DuplicateTaskDialog({ task, open, onOpenChange }: DuplicateTaskD
       weekDays: null,
       monthDay: undefined,
       isRecurring: true,
+      price: "0",
+      category: "",
+      description: "",
     },
   });
 
@@ -105,6 +115,9 @@ export function DuplicateTaskDialog({ task, open, onOpenChange }: DuplicateTaskD
         weekDays: weekDaysArray,
         monthDay: task.monthDay ? task.monthDay.toString() : undefined,
         isRecurring: task.isRecurring ?? true,
+        price: task.price ? task.price.toString() : "0",
+        category: task.category || "",
+        description: task.description || "",
       });
     }
   }, [task, open, form]);
@@ -117,6 +130,9 @@ export function DuplicateTaskDialog({ task, open, onOpenChange }: DuplicateTaskD
       weekDays: values.weekDays && values.weekDays.length > 0 ? values.weekDays : null,
       monthDay: values.monthDay || null,
       isRecurring: values.isRecurring ?? true,
+      price: values.price || 0,
+      category: values.category || null,
+      description: values.description || null,
     };
     createTask.mutate(taskData as any, {
       onSuccess: () => {
@@ -168,6 +184,28 @@ export function DuplicateTaskDialog({ task, open, onOpenChange }: DuplicateTaskD
 
             <FormField
               control={form.control}
+              name="description"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="flex items-center gap-2 text-sm">
+                    <FileText className="w-4 h-4" />
+                    Описание задачи
+                  </FormLabel>
+                  <FormControl>
+                    <Textarea
+                      placeholder="Подробное описание задачи..."
+                      className="things-input min-h-[80px] resize-none"
+                      rows={3}
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
               name="workerId"
               render={({ field }) => (
                 <FormItem>
@@ -189,6 +227,53 @@ export function DuplicateTaskDialog({ task, open, onOpenChange }: DuplicateTaskD
                       ))}
                     </SelectContent>
                   </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="category"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="flex items-center gap-2 text-sm">
+                    <Tag className="w-4 h-4" />
+                    Категория
+                  </FormLabel>
+                  <FormControl>
+                    <Input
+                      placeholder="Например: Уборка, Готовка..."
+                      className="things-input"
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="price"
+              render={({ field }) => (
+                <FormItem className="rounded-md border border-border/50 p-3">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Coins className="w-4 h-4 text-muted-foreground" />
+                    <FormLabel className="text-sm font-medium">Стоимость выполнения</FormLabel>
+                  </div>
+                  <FormControl>
+                    <div className="flex items-center gap-2">
+                      <Input
+                        type="number"
+                        min="0"
+                        placeholder="0"
+                        className="things-input w-32"
+                        {...field}
+                      />
+                      <span className="text-sm text-muted-foreground">₽</span>
+                    </div>
+                  </FormControl>
                   <FormMessage />
                 </FormItem>
               )}

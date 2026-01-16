@@ -20,7 +20,9 @@ import {
   Filter,
   Calendar,
   CalendarDays,
-  Copy
+  Copy,
+  Coins,
+  Tag
 } from "lucide-react";
 import {
   Select,
@@ -74,8 +76,16 @@ export default function Dashboard() {
   const [selectedTask, setSelectedTask] = useState<typeof tasks[0] | null>(null);
   const [isTaskDialogOpen, setIsTaskDialogOpen] = useState(false);
   const [filterByUserId, setFilterByUserId] = useState<string>("all");
+  const [filterByCategory, setFilterByCategory] = useState<string>("all");
   const [duplicateTask, setDuplicateTask] = useState<typeof tasks[0] | null>(null);
   const [isDuplicateDialogOpen, setIsDuplicateDialogOpen] = useState(false);
+
+  // Получаем уникальные категории из всех задач
+  const categories = Array.from(new Set(
+    tasks
+      .map(task => (task as any).category)
+      .filter((c): c is string => c !== null && c !== undefined && c.trim() !== "")
+  )).sort();
 
   // Обновляем выбранную задачу когда задачи обновляются
   useEffect(() => {
@@ -154,12 +164,27 @@ export default function Dashboard() {
   // Для админа - применяем фильтр по выбранному пользователю
   // Для обычных пользователей - также фильтруем по текущему дню недели
   const filteredTasks = user?.isAdmin
-    ? (filterByUserId === "all"
-        ? tasks
-        : filterByUserId === "unassigned"
-          ? tasks.filter(task => !task.workerId)
-          : tasks.filter(task => task.workerId === parseInt(filterByUserId)))
-    : tasks.filter(task => task.workerId === user?.id && isTaskVisibleToday(task));
+    ? tasks
+        .filter(task => {
+          // Фильтр по пользователю
+          if (filterByUserId === "all") return true;
+          if (filterByUserId === "unassigned") return !task.workerId;
+          return task.workerId === parseInt(filterByUserId);
+        })
+        .filter(task => {
+          // Фильтр по категории
+          if (filterByCategory === "all") return true;
+          if (filterByCategory === "uncategorized") return !(task as any).category;
+          return (task as any).category === filterByCategory;
+        })
+    : tasks
+        .filter(task => task.workerId === user?.id && isTaskVisibleToday(task))
+        .filter(task => {
+          // Фильтр по категории для обычного пользователя
+          if (filterByCategory === "all") return true;
+          if (filterByCategory === "uncategorized") return !(task as any).category;
+          return (task as any).category === filterByCategory;
+        });
 
   const handleTaskClick = (task: typeof tasks[0]) => {
     setSelectedTask(task);
@@ -334,6 +359,15 @@ export default function Dashboard() {
                     </button>
                   </>
                 )}
+                {!user.isAdmin && (user as any).bonusBalance > 0 && (
+                  <div className="mt-2 p-2 rounded bg-green-500/10 border border-green-500/20">
+                    <div className="flex items-center gap-1.5">
+                      <Coins className="w-3.5 h-3.5 text-green-600" />
+                      <p className="text-xs text-green-600 font-medium">Доп. премия к ЗП</p>
+                    </div>
+                    <p className="text-lg font-bold text-green-600 mt-0.5">{(user as any).bonusBalance} ₽</p>
+                  </div>
+                )}
                 <button
                   onClick={() => logout()}
                   className="text-xs text-muted-foreground hover:text-primary mt-1.5 transition-colors"
@@ -370,25 +404,48 @@ export default function Dashboard() {
                     }
                   </p>
                 </div>
-                {user?.isAdmin && (
-                  <div className="flex items-center gap-2">
-                    <Filter className="w-4 h-4 text-muted-foreground" />
-                    <Select value={filterByUserId} onValueChange={setFilterByUserId}>
-                      <SelectTrigger className="w-[200px]">
-                        <SelectValue placeholder="Фильтр по исполнителю" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">Все задачи</SelectItem>
-                        <SelectItem value="unassigned">Не назначенные</SelectItem>
-                        {users.map((u) => (
-                          <SelectItem key={u.id} value={u.id.toString()}>
-                            {u.name || u.phone}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                )}
+                <div className="flex flex-wrap items-center gap-2">
+                  {/* Фильтр по категории - для всех пользователей */}
+                  {categories.length > 0 && (
+                    <>
+                      <Tag className="w-4 h-4 text-muted-foreground" />
+                      <Select value={filterByCategory} onValueChange={setFilterByCategory}>
+                        <SelectTrigger className="w-[160px]">
+                          <SelectValue placeholder="Категория" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">Все категории</SelectItem>
+                          <SelectItem value="uncategorized">Без категории</SelectItem>
+                          {categories.map((cat) => (
+                            <SelectItem key={cat} value={cat}>
+                              {cat}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </>
+                  )}
+                  {/* Фильтр по исполнителю - только для админа */}
+                  {user?.isAdmin && (
+                    <>
+                      <Filter className="w-4 h-4 text-muted-foreground" />
+                      <Select value={filterByUserId} onValueChange={setFilterByUserId}>
+                        <SelectTrigger className="w-[180px]">
+                          <SelectValue placeholder="Исполнитель" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">Все задачи</SelectItem>
+                          <SelectItem value="unassigned">Не назначенные</SelectItem>
+                          {users.map((u) => (
+                            <SelectItem key={u.id} value={u.id.toString()}>
+                              {u.name || u.phone}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </>
+                  )}
+                </div>
               </div>
             </div>
 
@@ -466,6 +523,22 @@ export default function Dashboard() {
                             <CalendarDays className="w-3 h-3 text-muted-foreground" />
                             <p className="text-xs text-muted-foreground">
                               {(task as any).monthDay} день месяца
+                            </p>
+                          </div>
+                        )}
+                        {(task as any).price > 0 && (
+                          <div className="flex items-center gap-1.5 mt-1.5">
+                            <Coins className="w-3 h-3 text-green-600" />
+                            <p className="text-xs text-green-600 font-medium">
+                              +{(task as any).price} ₽
+                            </p>
+                          </div>
+                        )}
+                        {(task as any).category && (
+                          <div className="flex items-center gap-1.5 mt-1.5">
+                            <Tag className="w-3 h-3 text-blue-500" />
+                            <p className="text-xs text-blue-500 font-medium">
+                              {(task as any).category}
                             </p>
                           </div>
                         )}

@@ -42,6 +42,7 @@ export function useCreateTask() {
         requiresPhoto: data.requiresPhoto !== undefined ? Boolean(data.requiresPhoto) : false,
         weekDays: data.weekDays || null,
         monthDay: data.monthDay || null,
+        price: data.price !== undefined ? Number(data.price) : 0,
       };
 
       console.log("useCreateTask - payload:", payload);
@@ -86,6 +87,7 @@ export function useUpdateTask() {
         workerId: updates.workerId ? Number(updates.workerId) : updates.workerId,
         weekDays: updates.weekDays !== undefined ? updates.weekDays : undefined,
         monthDay: updates.monthDay !== undefined ? updates.monthDay : undefined,
+        price: updates.price !== undefined ? Number(updates.price) : undefined,
       };
 
       console.log("useUpdateTask - payload:", payload);

@@ -398,6 +398,12 @@ export async function registerRoutes(
         return res.status(500).json({ message: "Ошибка обновления задачи" });
       }
 
+      // Если у задачи есть стоимость и исполнитель, добавляем к балансу
+      if (task.price && task.price > 0 && task.workerId) {
+        await storage.updateUserBalance(task.workerId, task.price);
+        console.log(`Added ${task.price} to user ${task.workerId} balance for completing task ${taskId}`);
+      }
+
       res.json(updatedTask);
     } catch (err: any) {
       console.error("Error completing task:", err);
@@ -412,6 +418,12 @@ export async function registerRoutes(
       const task = await storage.getTask(taskId);
       if (!task) {
         return res.status(404).json({ message: "Задача не найдена" });
+      }
+
+      // Если задача была выполнена и имела стоимость, вычитаем из баланса
+      if (task.isCompleted && task.price && task.price > 0 && task.workerId) {
+        await storage.updateUserBalance(task.workerId, -task.price);
+        console.log(`Subtracted ${task.price} from user ${task.workerId} balance for uncompleting task ${taskId}`);
       }
 
       const updatedTask = await storage.updateTask(taskId, { isCompleted: false });
@@ -440,7 +452,7 @@ export async function registerRoutes(
   app.post(api.users.create.path, requireAuth, requireAdmin, async (req, res) => {
     try {
       const input = api.users.create.input.parse(req.body);
-      
+
       // Проверяем, существует ли пользователь
       const normalizedPhone = input.phone.replace(/\s+/g, "").replace(/-/g, "");
       const existingUser = await storage.getUserByPhone(normalizedPhone);
@@ -456,7 +468,7 @@ export async function registerRoutes(
         phone: normalizedPhone,
         isAdmin: false, // Только админ может создавать пользователей, но не может создавать других админов через API
       });
-      
+
       res.status(201).json(user);
     } catch (err: any) {
       if (err instanceof z.ZodError) {
@@ -467,6 +479,22 @@ export async function registerRoutes(
       }
       console.error('Error creating user:', err);
       res.status(500).json({ message: 'Ошибка создания пользователя', error: err.message });
+    }
+  });
+
+  // Сброс баланса пользователя (только для админа)
+  app.post("/api/users/:id/reset-balance", requireAuth, requireAdmin, async (req, res) => {
+    try {
+      const userId = Number(req.params.id);
+      const user = await storage.resetUserBalance(userId);
+      if (!user) {
+        return res.status(404).json({ message: "Пользователь не найден" });
+      }
+      console.log(`Reset balance for user ${userId}`);
+      res.json(user);
+    } catch (err: any) {
+      console.error("Error resetting user balance:", err);
+      res.status(500).json({ message: "Ошибка сброса баланса", error: err.message });
     }
   });
 

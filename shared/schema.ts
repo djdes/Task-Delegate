@@ -1,4 +1,4 @@
-import { mysqlTable, varchar, int, boolean } from "drizzle-orm/mysql-core";
+import { mysqlTable, varchar, int, boolean, text } from "drizzle-orm/mysql-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -8,6 +8,7 @@ export const users = mysqlTable("users", {
   name: varchar("name", { length: 255 }),
   isAdmin: boolean("is_admin").notNull().default(false),
   createdAt: int("created_at").notNull().default(0),
+  bonusBalance: int("bonus_balance").notNull().default(0), // Баланс дополнительной премии
 });
 
 export const workers = mysqlTable("workers", {
@@ -25,6 +26,9 @@ export const tasks = mysqlTable("tasks", {
   weekDays: varchar("week_days", { length: 20 }), // JSON массив дней: [0,1,2,3,4,5,6] где 0=Вс, 1=Пн, ..., 6=Сб
   monthDay: int("month_day"), // День месяца (1-31) для отображения задачи
   isRecurring: boolean("is_recurring").notNull().default(true), // Повторяющаяся задача (сбрасывается каждый день)
+  price: int("price").notNull().default(0), // Стоимость выполнения задачи в рублях
+  category: varchar("category", { length: 100 }), // Категория задачи (уборка, готовка и т.д.)
+  description: text("description"), // Описание задачи
 });
 
 export const insertUserSchema = z.object({
@@ -65,6 +69,9 @@ export const insertTaskSchema = createInsertSchema(tasks).pick({
   weekDays: z.array(z.number().min(0).max(6)).nullable().optional(), // массив дней недели [0-6]
   monthDay: z.number().min(1).max(31).nullable().optional(), // день месяца (1-31)
   isRecurring: z.boolean().optional().default(true), // повторяющаяся задача
+  price: z.number().min(0).optional().default(0), // стоимость выполнения в рублях
+  category: z.string().max(100).nullable().optional(), // категория задачи
+  description: z.string().nullable().optional(), // описание задачи
 });
 
 export type User = typeof users.$inferSelect;

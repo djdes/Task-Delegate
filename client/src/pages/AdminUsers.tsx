@@ -2,7 +2,7 @@ import { useLocation } from "wouter";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ArrowLeft, UserPlus, Users } from "lucide-react";
+import { ArrowLeft, UserPlus, Users, Coins, RotateCcw } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
@@ -82,6 +82,35 @@ export default function AdminUsers() {
       toast({
         title: "Ошибка",
         description: error.message || "Не удалось создать пользователя",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Мутация для сброса баланса
+  const resetBalanceMutation = useMutation({
+    mutationFn: async (userId: number) => {
+      const response = await fetch(`/api/users/${userId}/reset-balance`, {
+        method: "POST",
+        credentials: "include",
+      });
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || "Failed to reset balance");
+      }
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["users"] });
+      toast({
+        title: "Успешно",
+        description: "Баланс сброшен",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Ошибка",
+        description: error.message || "Не удалось сбросить баланс",
         variant: "destructive",
       });
     },
@@ -197,17 +226,43 @@ export default function AdminUsers() {
                     className="p-4 rounded-lg border border-border/50 bg-muted/30 hover:bg-muted/50 transition-colors"
                   >
                     <div className="flex items-center justify-between">
-                      <div>
+                      <div className="flex-1">
                         <p className="font-medium text-foreground">{u.phone}</p>
                         {u.name && (
                           <p className="text-sm text-muted-foreground">{u.name}</p>
                         )}
+                        {!u.isAdmin && u.bonusBalance > 0 && (
+                          <div className="flex items-center gap-1.5 mt-2">
+                            <Coins className="w-3.5 h-3.5 text-green-600" />
+                            <span className="text-sm font-medium text-green-600">
+                              {u.bonusBalance} ₽
+                            </span>
+                          </div>
+                        )}
                       </div>
-                      {u.isAdmin && (
-                        <span className="px-2 py-1 text-xs font-medium bg-primary/20 text-primary rounded">
-                          Админ
-                        </span>
-                      )}
+                      <div className="flex items-center gap-2">
+                        {!u.isAdmin && u.bonusBalance > 0 && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              if (confirm(`Сбросить баланс ${u.bonusBalance} ₽ для ${u.name || u.phone}?`)) {
+                                resetBalanceMutation.mutate(u.id);
+                              }
+                            }}
+                            disabled={resetBalanceMutation.isPending}
+                            className="text-xs"
+                          >
+                            <RotateCcw className="w-3.5 h-3.5 mr-1" />
+                            Сброс
+                          </Button>
+                        )}
+                        {u.isAdmin && (
+                          <span className="px-2 py-1 text-xs font-medium bg-primary/20 text-primary rounded">
+                            Админ
+                          </span>
+                        )}
+                      </div>
                     </div>
                   </div>
                 ))}

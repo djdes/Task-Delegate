@@ -238,11 +238,13 @@ export function TaskViewDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl">
         <DialogHeader>
-          <DialogTitle>{currentTask.title}</DialogTitle>
+          <DialogTitle>
+            {(currentTask as any).description || "Подробности не указаны"}
+          </DialogTitle>
           <DialogDescription>
             {currentTask.requiresPhoto
               ? "Для завершения задачи необходимо загрузить фотографию результатов"
-              : "Просмотр задачи"}
+              : currentTask.title}
           </DialogDescription>
         </DialogHeader>
 

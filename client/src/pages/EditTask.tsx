@@ -5,8 +5,9 @@ import { useUsers } from "@/hooks/use-users";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
-import { ArrowLeft, Edit, Calendar, RefreshCw, CalendarDays } from "lucide-react";
+import { ArrowLeft, Edit, Calendar, RefreshCw, CalendarDays, Coins, Tag, FileText } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
@@ -34,6 +35,9 @@ const formSchema = insertTaskSchema.extend({
   weekDays: z.array(z.number()).nullable().optional(),
   monthDay: z.string().optional().transform(val => val ? parseInt(val, 10) : null),
   isRecurring: z.boolean().optional().default(true),
+  price: z.string().optional().transform(val => val ? parseInt(val, 10) : 0),
+  category: z.string().optional().transform(val => val && val.trim() ? val.trim() : null),
+  description: z.string().optional().transform(val => val && val.trim() ? val.trim() : null),
 });
 
 type FormValues = z.input<typeof formSchema>;
@@ -66,6 +70,9 @@ export default function EditTask() {
       weekDays: null,
       monthDay: undefined,
       isRecurring: true,
+      price: "0",
+      category: "",
+      description: "",
     },
   });
 
@@ -94,6 +101,9 @@ export default function EditTask() {
         weekDays: weekDaysArray,
         monthDay: (task as any).monthDay ? (task as any).monthDay.toString() : undefined,
         isRecurring: (task as any).isRecurring ?? true,
+        price: (task as any).price ? (task as any).price.toString() : "0",
+        category: (task as any).category || "",
+        description: (task as any).description || "",
       });
     }
   }, [task, form]);
@@ -126,6 +136,9 @@ export default function EditTask() {
       weekDays: values.weekDays && values.weekDays.length > 0 ? values.weekDays : null,
       monthDay: values.monthDay || null,
       isRecurring: values.isRecurring ?? true,
+      price: values.price || 0,
+      category: values.category || null,
+      description: values.description || null,
     };
     updateTask.mutate(
       taskData as any,
@@ -205,11 +218,36 @@ export default function EditTask() {
                 <FormItem>
                   <FormLabel>Название</FormLabel>
                   <FormControl>
-                    <Input 
-                      className="things-input" 
-                      {...field} 
+                    <Input
+                      className="things-input"
+                      {...field}
                     />
                   </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="description"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="flex items-center gap-2">
+                    <FileText className="w-4 h-4" />
+                    Описание задачи
+                  </FormLabel>
+                  <FormControl>
+                    <Textarea
+                      placeholder="Подробное описание задачи..."
+                      className="things-input min-h-[80px] resize-none"
+                      rows={3}
+                      {...field}
+                    />
+                  </FormControl>
+                  <p className="text-xs text-muted-foreground">
+                    Необязательно. Отображается при просмотре задачи пользователем.
+                  </p>
                   <FormMessage />
                 </FormItem>
               )}
@@ -244,6 +282,59 @@ export default function EditTask() {
                       )}
                     </SelectContent>
                   </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="category"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="flex items-center gap-2">
+                    <Tag className="w-4 h-4" />
+                    Категория
+                  </FormLabel>
+                  <FormControl>
+                    <Input
+                      placeholder="Например: Уборка, Готовка, Покупки..."
+                      className="things-input"
+                      {...field}
+                    />
+                  </FormControl>
+                  <p className="text-xs text-muted-foreground">
+                    Необязательно. Поможет фильтровать задачи по категориям.
+                  </p>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="price"
+              render={({ field }) => (
+                <FormItem className="rounded-md border border-border/50 p-4">
+                  <div className="flex items-center gap-2 mb-3">
+                    <Coins className="w-4 h-4 text-muted-foreground" />
+                    <FormLabel className="text-sm font-medium">Стоимость выполнения</FormLabel>
+                  </div>
+                  <p className="text-xs text-muted-foreground mb-3">
+                    Укажите сумму в рублях, которая будет начислена исполнителю за выполнение задачи
+                  </p>
+                  <FormControl>
+                    <div className="flex items-center gap-2">
+                      <Input
+                        type="number"
+                        min="0"
+                        placeholder="0"
+                        className="things-input w-32"
+                        {...field}
+                      />
+                      <span className="text-sm text-muted-foreground">₽</span>
+                    </div>
+                  </FormControl>
                   <FormMessage />
                 </FormItem>
               )}

@@ -51,7 +51,28 @@ async function updateTasksTable() {
       ADD COLUMN IF NOT EXISTS \`month_day\` int NULL
     `).catch(() => {}); // Игнорируем ошибку если колонка уже существует
 
-    console.log("Таблица tasks обновлена");
+    await connection.execute(`
+      ALTER TABLE \`tasks\`
+      ADD COLUMN IF NOT EXISTS \`price\` int NOT NULL DEFAULT 0
+    `).catch(() => {}); // Игнорируем ошибку если колонка уже существует
+
+    await connection.execute(`
+      ALTER TABLE \`tasks\`
+      ADD COLUMN IF NOT EXISTS \`category\` varchar(100) NULL
+    `).catch(() => {}); // Игнорируем ошибку если колонка уже существует
+
+    await connection.execute(`
+      ALTER TABLE \`tasks\`
+      ADD COLUMN IF NOT EXISTS \`description\` text NULL
+    `).catch(() => {}); // Игнорируем ошибку если колонка уже существует
+
+    // Добавляем поле bonus_balance в таблицу users
+    await connection.execute(`
+      ALTER TABLE \`users\`
+      ADD COLUMN IF NOT EXISTS \`bonus_balance\` int NOT NULL DEFAULT 0
+    `).catch(() => {}); // Игнорируем ошибку если колонка уже существует
+
+    console.log("Таблицы tasks и users обновлены");
   } catch (error) {
     console.error("Ошибка:", error);
     process.exit(1);
