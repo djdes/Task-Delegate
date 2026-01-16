@@ -27,7 +27,8 @@ import {
   LogOut,
   ChevronRight,
   Camera,
-  Check
+  Check,
+  RefreshCw
 } from "lucide-react";
 import {
   Select,
@@ -62,6 +63,14 @@ export default function Dashboard() {
   const [filterByCategory, setFilterByCategory] = useState<string>("all");
   const [duplicateTask, setDuplicateTask] = useState<typeof tasks[0] | null>(null);
   const [isDuplicateDialogOpen, setIsDuplicateDialogOpen] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    await queryClient.invalidateQueries({ queryKey: ["tasks"] });
+    await queryClient.invalidateQueries({ queryKey: ["users"] });
+    setTimeout(() => setIsRefreshing(false), 600);
+  };
 
   const categories = Array.from(new Set(
     tasks
@@ -216,14 +225,20 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-background pb-20">
+    <div className="desktop-layout">
       {/* Header - Ozon style */}
       <header className="ozon-header">
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between max-w-6xl mx-auto lg:px-0">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center">
-              <ListTodo className="w-6 h-6" />
-            </div>
+            {/* Refresh button */}
+            <button
+              onClick={handleRefresh}
+              disabled={isRefreshing}
+              className="refresh-btn"
+              aria-label="Обновить"
+            >
+              <RefreshCw className={`w-6 h-6 ${isRefreshing ? 'animate-spin' : ''}`} />
+            </button>
             <div>
               <h1 className="text-lg font-bold">Задачи</h1>
               <p className="text-sm text-white/80">
@@ -247,7 +262,7 @@ export default function Dashboard() {
 
       {/* Progress bar */}
       {totalCount > 0 && (
-        <div className="px-4 py-3 bg-card border-b border-border">
+        <div className="progress-section">
           <div className="flex items-center justify-between mb-2">
             <span className="text-sm font-medium text-foreground">
               Выполнено {completedCount} из {totalCount}
@@ -267,8 +282,8 @@ export default function Dashboard() {
 
       {/* Filters */}
       {(categories.length > 0 || user?.isAdmin) && (
-        <div className="px-4 py-3 bg-card border-b border-border">
-          <div className="flex flex-wrap gap-2">
+        <div className="filters-section">
+          <div className="flex flex-wrap gap-2 max-w-6xl mx-auto lg:px-0">
             {categories.length > 0 && (
               <Select value={filterByCategory} onValueChange={setFilterByCategory}>
                 <SelectTrigger className="h-10 w-auto min-w-[140px] rounded-xl">
@@ -309,7 +324,7 @@ export default function Dashboard() {
       )}
 
       {/* Task List */}
-      <main className="px-4 py-4">
+      <main className="desktop-content">
         {filteredTasks.length === 0 ? (
           <div className="empty-state">
             <div className="empty-state-icon">
@@ -332,7 +347,7 @@ export default function Dashboard() {
             )}
           </div>
         ) : (
-          <div className="space-y-3">
+          <div className="task-grid">
             {filteredTasks.map(task => {
               const isCompleted = Boolean((task as any).isCompleted);
               const hasPrice = (task as any).price > 0;
@@ -484,20 +499,12 @@ export default function Dashboard() {
         </button>
       )}
 
-      {/* Bottom Navigation - Ozon style */}
+      {/* Bottom Navigation - Ozon style (sidebar on desktop) */}
       <nav className="ozon-bottom-nav">
-        <div className="flex items-center justify-around">
+        <div className="flex items-center justify-around lg:flex-col lg:items-stretch lg:gap-2">
           <button className="ozon-bottom-nav-item active">
             <Home className="w-6 h-6" />
             <span className="text-xs font-medium">Главная</span>
-          </button>
-
-          <button
-            className="ozon-bottom-nav-item"
-            onClick={() => toast({ title: "Скоро", description: "Раздел в разработке" })}
-          >
-            <ListTodo className="w-6 h-6" />
-            <span className="text-xs font-medium">История</span>
           </button>
 
           {user?.isAdmin && (
