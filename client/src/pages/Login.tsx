@@ -103,10 +103,7 @@ export default function Login() {
             <Sparkles className="absolute top-2 right-2 w-5 h-5 text-yellow-300 drop-shadow-lg" />
           </div>
         </div>
-        <h1 className="text-3xl font-extrabold text-white mb-2">Ежедневные платные задачи</h1>
-        <p className="text-white/80 text-lg">
-          Войдите по номеру телефона
-        </p>
+        <h1 className="text-3xl font-extrabold text-white">Ежедневные платные задачи</h1>
       </div>
 
       {/* Form Card */}
