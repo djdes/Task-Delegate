@@ -306,13 +306,13 @@ export default function Dashboard() {
 
       {/* Progress bar - compact */}
       {totalCount > 0 && (
-        <div className="px-4 py-2 max-w-6xl mx-auto">
+        <div className="px-4 py-2 max-w-6xl mx-auto bg-white/80 dark:bg-gray-800/80 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 mx-4 lg:mx-auto">
           <div className="flex items-center gap-3">
-            <div className="flex items-center gap-2 text-xs text-muted-foreground whitespace-nowrap">
+            <div className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-200 whitespace-nowrap">
               <CheckCircle2 className="w-4 h-4 text-green-500" />
-              <span className="font-medium">{completedCount}/{totalCount}</span>
+              <span className="font-semibold">{completedCount}/{totalCount}</span>
             </div>
-            <div className="flex-1 h-1.5 bg-muted rounded-full overflow-hidden">
+            <div className="flex-1 h-2.5 bg-gray-200 dark:bg-gray-600 rounded-full overflow-hidden">
               <div
                 className={`h-full rounded-full transition-all duration-500 ${
                   completedCount === totalCount
@@ -322,7 +322,7 @@ export default function Dashboard() {
                 style={{ width: `${(completedCount / totalCount) * 100}%` }}
               />
             </div>
-            <span className={`text-xs font-bold ${completedCount === totalCount ? 'text-green-500' : 'text-primary'}`}>
+            <span className={`text-sm font-bold ${completedCount === totalCount ? 'text-green-600' : 'text-primary'}`}>
               {Math.round((completedCount / totalCount) * 100)}%
             </span>
           </div>
