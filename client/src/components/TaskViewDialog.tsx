@@ -329,7 +329,6 @@ export function TaskViewDialog({
                     ref={fileInputRef}
                     type="file"
                     accept="image/*"
-                    capture="environment"
                     onChange={handleFileSelect}
                     className="hidden"
                     id="photo-upload"
@@ -357,10 +356,10 @@ export function TaskViewDialog({
                           <Camera className={`${photoUrls.length > 0 ? 'w-4 h-4' : 'w-6 h-6'} text-primary`} />
                         </div>
                         <p className="text-sm font-semibold text-foreground">
-                          {photoUrls.length > 0 ? 'Добавить ещё фото' : 'Сделать фото'}
+                          {photoUrls.length > 0 ? 'Добавить ещё фото' : 'Добавить фото'}
                         </p>
                         {photoUrls.length === 0 && (
-                          <p className="text-xs text-muted-foreground">или выбрать из галереи</p>
+                          <p className="text-xs text-muted-foreground">камера или галерея</p>
                         )}
                       </>
                     )}

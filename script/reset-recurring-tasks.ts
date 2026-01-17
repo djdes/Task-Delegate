@@ -10,7 +10,7 @@ import path from "path";
  * Что делает:
  * 1. Находит все задачи с is_recurring = 1 и is_completed = 1
  * 2. Сбрасывает is_completed в 0
- * 3. Удаляет фото (photo_url) и файлы с диска
+ * 3. Удаляет все фото (photo_url и photo_urls) и файлы с диска
  */
 
 async function resetRecurringTasks() {
@@ -34,7 +34,7 @@ async function resetRecurringTasks() {
   try {
     // Находим все повторяющиеся завершенные задачи
     const [tasks] = await connection.execute<any[]>(`
-      SELECT id, photo_url FROM tasks
+      SELECT id, photo_url, photo_urls FROM tasks
       WHERE is_recurring = 1 AND is_completed = 1
     `);
 
@@ -42,13 +42,33 @@ async function resetRecurringTasks() {
 
     // Удаляем файлы фотографий
     for (const task of tasks) {
+      // Удаляем фото из массива photo_urls
+      if (task.photo_urls) {
+        try {
+          const photoUrls: string[] = JSON.parse(task.photo_urls);
+          for (const photoUrl of photoUrls) {
+            const photoPath = path.join(process.cwd(), photoUrl);
+            try {
+              await unlink(photoPath);
+              console.log(`Удален файл: ${photoPath}`);
+            } catch (err: any) {
+              if (err.code !== 'ENOENT') {
+                console.error(`Ошибка удаления файла ${photoPath}:`, err.message);
+              }
+            }
+          }
+        } catch (parseErr) {
+          console.error(`Ошибка парсинга photo_urls для задачи ${task.id}:`, parseErr);
+        }
+      }
+
+      // Удаляем старое фото photo_url (для обратной совместимости)
       if (task.photo_url) {
         const photoPath = path.join(process.cwd(), task.photo_url);
         try {
           await unlink(photoPath);
-          console.log(`Удален файл: ${photoPath}`);
+          console.log(`Удален файл (legacy): ${photoPath}`);
         } catch (err: any) {
-          // Файл может не существовать, это нормально
           if (err.code !== 'ENOENT') {
             console.error(`Ошибка удаления файла ${photoPath}:`, err.message);
           }
@@ -56,10 +76,10 @@ async function resetRecurringTasks() {
       }
     }
 
-    // Сбрасываем статус и фото для всех повторяющихся задач
+    // Сбрасываем статус и все фото для всех повторяющихся задач
     const [result] = await connection.execute(`
       UPDATE tasks
-      SET is_completed = 0, photo_url = NULL
+      SET is_completed = 0, photo_url = NULL, photo_urls = NULL
       WHERE is_recurring = 1 AND is_completed = 1
     `);
 
