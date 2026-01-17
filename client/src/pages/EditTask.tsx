@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useParams, useLocation } from "wouter";
 import { useUpdateTask, useTask } from "@/hooks/use-tasks";
 import { useUsers } from "@/hooks/use-users";
@@ -7,7 +7,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
-import { ArrowLeft, Edit, Calendar, RefreshCw, CalendarDays, Coins, Tag, FileText } from "lucide-react";
+import { ArrowLeft, Edit, Calendar, RefreshCw, CalendarDays, Coins, Tag, FileText, ImagePlus, X, Trash2 } from "lucide-react";
+import { useQueryClient } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
@@ -60,6 +61,15 @@ export default function EditTask() {
   const updateTask = useUpdateTask();
   const { data: users = [] } = useUsers();
   const { toast } = useToast();
+  const queryClient = useQueryClient();
+
+  // Состояние для примера фото
+  const [examplePhotoFile, setExamplePhotoFile] = useState<File | null>(null);
+  const [examplePhotoPreview, setExamplePhotoPreview] = useState<string | null>(null);
+  const [currentExamplePhoto, setCurrentExamplePhoto] = useState<string | null>(null);
+  const [isUploadingExample, setIsUploadingExample] = useState(false);
+  const [isDeletingExample, setIsDeletingExample] = useState(false);
+  const examplePhotoInputRef = useRef<HTMLInputElement>(null);
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -105,8 +115,114 @@ export default function EditTask() {
         category: (task as any).category || "",
         description: (task as any).description || "",
       });
+
+      // Устанавливаем текущее пример фото если есть
+      setCurrentExamplePhoto((task as any).examplePhotoUrl || null);
     }
   }, [task, form]);
+
+  // Обработчики для примера фото
+  const handleExamplePhotoSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (!file.type.startsWith("image/")) {
+        toast({
+          title: "Ошибка",
+          description: "Выберите изображение",
+          variant: "destructive",
+        });
+        return;
+      }
+      setExamplePhotoFile(file);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setExamplePhotoPreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const removeExamplePhotoPreview = () => {
+    setExamplePhotoFile(null);
+    setExamplePhotoPreview(null);
+    if (examplePhotoInputRef.current) {
+      examplePhotoInputRef.current.value = "";
+    }
+  };
+
+  const uploadExamplePhoto = async () => {
+    if (!examplePhotoFile || !id) return;
+
+    setIsUploadingExample(true);
+    const formData = new FormData();
+    formData.append("photo", examplePhotoFile);
+
+    try {
+      const response = await fetch(`/api/tasks/${id}/example-photo`, {
+        method: "POST",
+        credentials: "include",
+        body: formData,
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || "Ошибка загрузки");
+      }
+
+      const data = await response.json();
+      setCurrentExamplePhoto(data.examplePhotoUrl);
+      setExamplePhotoFile(null);
+      setExamplePhotoPreview(null);
+      if (examplePhotoInputRef.current) {
+        examplePhotoInputRef.current.value = "";
+      }
+      queryClient.invalidateQueries({ queryKey: ["/api/tasks"] });
+      toast({
+        title: "Успешно",
+        description: "Пример фото загружен",
+      });
+    } catch (error: any) {
+      toast({
+        title: "Ошибка",
+        description: error.message || "Не удалось загрузить фото",
+        variant: "destructive",
+      });
+    } finally {
+      setIsUploadingExample(false);
+    }
+  };
+
+  const deleteExamplePhoto = async () => {
+    if (!id) return;
+
+    setIsDeletingExample(true);
+    try {
+      const response = await fetch(`/api/tasks/${id}/example-photo`, {
+        method: "DELETE",
+        credentials: "include",
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || "Ошибка удаления");
+      }
+
+      setCurrentExamplePhoto(null);
+      queryClient.invalidateQueries({ queryKey: ["/api/tasks"] });
+      toast({
+        title: "Успешно",
+        description: "Пример фото удален",
+      });
+    } catch (error: any) {
+      toast({
+        title: "Ошибка",
+        description: error.message || "Не удалось удалить фото",
+        variant: "destructive",
+      });
+    } finally {
+      setIsDeletingExample(false);
+    }
+  };
 
   // Проверка прав администратора (после всех хуков)
   if (!user || !user.isAdmin) {
@@ -344,21 +460,120 @@ export default function EditTask() {
               control={form.control}
               name="requiresPhoto"
               render={({ field }) => (
-                <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border border-border/50 p-4">
-                  <FormControl>
-                    <Checkbox
-                      checked={field.value}
-                      onCheckedChange={field.onChange}
-                    />
-                  </FormControl>
-                  <div className="space-y-1 leading-none">
-                    <FormLabel className="cursor-pointer">
-                      Добавить фото результатов
-                    </FormLabel>
-                    <p className="text-xs text-muted-foreground">
-                      Пользователь должен будет загрузить фотографию перед завершением задачи
-                    </p>
+                <FormItem className="rounded-md border border-border/50 p-4 space-y-4">
+                  <div className="flex flex-row items-start space-x-3 space-y-0">
+                    <FormControl>
+                      <Checkbox
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                      />
+                    </FormControl>
+                    <div className="space-y-1 leading-none">
+                      <FormLabel className="cursor-pointer">
+                        Добавить фото результатов
+                      </FormLabel>
+                      <p className="text-xs text-muted-foreground">
+                        Пользователь должен будет загрузить фотографию перед завершением задачи
+                      </p>
+                    </div>
                   </div>
+
+                  {/* Секция примера фото - показывается только если галочка установлена */}
+                  {field.value && (
+                    <div className="pt-3 border-t border-border/30">
+                      <div className="flex items-center gap-2 mb-2">
+                        <ImagePlus className="w-4 h-4 text-muted-foreground" />
+                        <span className="text-sm font-medium">Пример фото (необязательно)</span>
+                      </div>
+                      <p className="text-xs text-muted-foreground mb-3">
+                        Загрузите пример того, как должна выглядеть выполненная задача
+                      </p>
+
+                      {/* Текущее загруженное пример фото */}
+                      {currentExamplePhoto && !examplePhotoPreview && (
+                        <div className="relative inline-block mb-3">
+                          <img
+                            src={currentExamplePhoto}
+                            alt="Пример фото"
+                            className="w-32 h-32 object-cover rounded-lg border border-border"
+                          />
+                          <button
+                            type="button"
+                            onClick={deleteExamplePhoto}
+                            disabled={isDeletingExample}
+                            className="absolute -top-2 -right-2 p-1 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors disabled:opacity-50"
+                          >
+                            {isDeletingExample ? (
+                              <div className="w-3 h-3 border border-white border-t-transparent rounded-full animate-spin" />
+                            ) : (
+                              <Trash2 className="w-3 h-3" />
+                            )}
+                          </button>
+                        </div>
+                      )}
+
+                      {/* Превью нового фото перед загрузкой */}
+                      {examplePhotoPreview && (
+                        <div className="space-y-2 mb-3">
+                          <div className="relative inline-block">
+                            <img
+                              src={examplePhotoPreview}
+                              alt="Новый пример фото"
+                              className="w-32 h-32 object-cover rounded-lg border border-primary"
+                            />
+                            <button
+                              type="button"
+                              onClick={removeExamplePhotoPreview}
+                              className="absolute -top-2 -right-2 p-1 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors"
+                            >
+                              <X className="w-3 h-3" />
+                            </button>
+                          </div>
+                          <div className="flex gap-2">
+                            <Button
+                              type="button"
+                              size="sm"
+                              onClick={uploadExamplePhoto}
+                              disabled={isUploadingExample}
+                            >
+                              {isUploadingExample ? "Загрузка..." : "Сохранить фото"}
+                            </Button>
+                            <Button
+                              type="button"
+                              size="sm"
+                              variant="ghost"
+                              onClick={removeExamplePhotoPreview}
+                            >
+                              Отмена
+                            </Button>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Кнопка выбора нового фото */}
+                      {!examplePhotoPreview && (
+                        <>
+                          <input
+                            ref={examplePhotoInputRef}
+                            type="file"
+                            accept="image/*"
+                            onChange={handleExamplePhotoSelect}
+                            className="hidden"
+                            id="example-photo-upload"
+                          />
+                          <label
+                            htmlFor="example-photo-upload"
+                            className="inline-flex items-center gap-2 px-4 py-2 border border-dashed border-primary/40 bg-primary/5 rounded-lg cursor-pointer hover:border-primary hover:bg-primary/10 transition-all"
+                          >
+                            <ImagePlus className="w-4 h-4 text-primary" />
+                            <span className="text-sm font-medium text-primary">
+                              {currentExamplePhoto ? "Заменить фото" : "Выбрать фото"}
+                            </span>
+                          </label>
+                        </>
+                      )}
+                    </div>
+                  )}
                 </FormItem>
               )}
             />

@@ -156,7 +156,7 @@
 
   /* Ozon-style header */
   .ozon-header {
-    @apply sticky top-0 z-50 bg-primary text-white px-4 py-3 shadow-md;
+    @apply fixed top-0 left-0 right-0 z-50 bg-primary text-white px-4 py-3 shadow-md;
   }
 
   @media (min-width: 1024px) {
@@ -167,12 +167,12 @@
 
   /* Desktop layout container */
   .desktop-layout {
-    @apply min-h-screen bg-background;
+    @apply min-h-screen bg-background pt-14;
   }
 
   @media (min-width: 1024px) {
     .desktop-layout {
-      @apply pl-64;
+      @apply pt-16 pl-64;
     }
   }
 
