@@ -320,6 +320,80 @@ export async function registerRoutes(
     });
   });
 
+  // Загрузка примера фото для задачи (только админ)
+  app.post("/api/tasks/:id/example-photo", requireAuth, requireAdmin, (req, res, next) => {
+    res.setHeader('Content-Type', 'application/json');
+
+    upload.single("photo")(req, res, async (err: any) => {
+      try {
+        if (err) {
+          console.error("Multer upload error:", err);
+          return res.status(400).json({ message: err.message || "Ошибка загрузки файла" });
+        }
+
+        if (!req.file) {
+          return res.status(400).json({ message: "Файл не загружен" });
+        }
+
+        const taskId = Number(req.params.id);
+        const task = await storage.getTask(taskId);
+        if (!task) {
+          return res.status(404).json({ message: "Задача не найдена" });
+        }
+
+        const examplePhotoUrl = `/uploads/${req.file.filename}`;
+        console.log("Uploading example photo for task:", taskId, "examplePhotoUrl:", examplePhotoUrl);
+        const updatedTask = await storage.updateTask(taskId, { examplePhotoUrl });
+        console.log("Updated task with example photo:", updatedTask);
+
+        if (!updatedTask) {
+          return res.status(500).json({ message: "Ошибка обновления задачи" });
+        }
+
+        return res.json({ examplePhotoUrl: updatedTask.examplePhotoUrl });
+      } catch (uploadErr: any) {
+        console.error("Error uploading example photo:", uploadErr);
+        return res.status(500).json({ message: "Ошибка загрузки фото", error: uploadErr.message });
+      }
+    });
+  });
+
+  // Удаление примера фото задачи (только админ)
+  app.delete("/api/tasks/:id/example-photo", requireAuth, requireAdmin, async (req, res) => {
+    res.setHeader("Content-Type", "application/json");
+    try {
+      const taskId = Number(req.params.id);
+      const task = await storage.getTask(taskId);
+      if (!task) {
+        return res.status(404).json({ message: "Задача не найдена" });
+      }
+
+      if (!task.examplePhotoUrl) {
+        return res.status(400).json({ message: "У задачи нет примера фото" });
+      }
+
+      // Удаляем файл с диска
+      const { unlink } = await import("fs/promises");
+      const photoPath = path.join(process.cwd(), task.examplePhotoUrl);
+      try {
+        await unlink(photoPath);
+        console.log("Deleted example photo file:", photoPath);
+      } catch (unlinkErr: any) {
+        console.error("Error deleting example photo file:", unlinkErr);
+      }
+
+      const updatedTask = await storage.updateTask(taskId, { examplePhotoUrl: null });
+      if (!updatedTask) {
+        return res.status(500).json({ message: "Ошибка обновления задачи" });
+      }
+
+      res.json({ success: true });
+    } catch (err: any) {
+      console.error("Error deleting example photo:", err);
+      res.status(500).json({ message: "Ошибка удаления примера фото", error: err.message });
+    }
+  });
+
   // Удаление фото задачи
   app.delete("/api/tasks/:id/photo", requireAuth, async (req, res) => {
     res.setHeader("Content-Type", "application/json");
@@ -405,10 +479,10 @@ export async function registerRoutes(
         console.log(`Added ${task.price} to user ${task.workerId} balance for completing task ${taskId}`);
       }
 
-      // Отправляем email админу
+      // Отправляем email админу с прикрепленным фото (если есть)
       const worker = task.workerId ? await storage.getUserById(task.workerId) : null;
       const workerName = worker?.name || worker?.phone || "Неизвестный";
-      sendTaskCompletedEmail(task.title, workerName);
+      sendTaskCompletedEmail(task.title, workerName, task.photoUrl);
 
       res.json(updatedTask);
     } catch (err: any) {

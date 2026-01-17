@@ -66,6 +66,11 @@ async function updateTasksTable() {
       ADD COLUMN IF NOT EXISTS \`description\` text NULL
     `).catch(() => {}); // Игнорируем ошибку если колонка уже существует
 
+    await connection.execute(`
+      ALTER TABLE \`tasks\`
+      ADD COLUMN IF NOT EXISTS \`example_photo_url\` varchar(500) NULL
+    `).catch(() => {}); // Игнорируем ошибку если колонка уже существует
+
     // Добавляем поле bonus_balance в таблицу users
     await connection.execute(`
       ALTER TABLE \`users\`

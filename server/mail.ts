@@ -1,4 +1,5 @@
 import nodemailer from "nodemailer";
+import path from "path";
 
 const transporter = nodemailer.createTransport({
   host: "smtp.gmail.com",
@@ -12,15 +13,28 @@ const transporter = nodemailer.createTransport({
 
 const ADMIN_EMAIL = "bugdenes@gmail.com";
 
-export async function sendTaskCompletedEmail(taskTitle: string, workerName: string) {
+export async function sendTaskCompletedEmail(taskTitle: string, workerName: string, photoUrl?: string | null) {
   try {
-    await transporter.sendMail({
+    const mailOptions: nodemailer.SendMailOptions = {
       from: '"Task-Delegate" <admin@yesbeat.ru>',
       to: ADMIN_EMAIL,
       subject: `${taskTitle} - ${workerName}`,
       text: "",
-    });
-    console.log(`Email sent: ${taskTitle} - ${workerName}`);
+    };
+
+    // Если есть фото, прикрепляем его к письму
+    if (photoUrl) {
+      const photoPath = path.join(process.cwd(), photoUrl);
+      mailOptions.attachments = [
+        {
+          filename: path.basename(photoUrl),
+          path: photoPath,
+        },
+      ];
+    }
+
+    await transporter.sendMail(mailOptions);
+    console.log(`Email sent: ${taskTitle} - ${workerName}${photoUrl ? ' (with photo)' : ''}`);
   } catch (error) {
     console.error("Error sending email:", error);
   }

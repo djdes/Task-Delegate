@@ -116,6 +116,7 @@ export class DatabaseStorage implements IStorage {
       workerId: tasks.workerId,
       requiresPhoto: tasks.requiresPhoto,
       photoUrl: tasks.photoUrl,
+      examplePhotoUrl: tasks.examplePhotoUrl,
       isCompleted: tasks.isCompleted,
       weekDays: tasks.weekDays,
       monthDay: tasks.monthDay,
@@ -138,6 +139,7 @@ export class DatabaseStorage implements IStorage {
       workerId: tasks.workerId,
       requiresPhoto: tasks.requiresPhoto,
       photoUrl: tasks.photoUrl,
+      examplePhotoUrl: tasks.examplePhotoUrl,
       isCompleted: tasks.isCompleted,
       weekDays: tasks.weekDays,
       monthDay: tasks.monthDay,
@@ -163,6 +165,7 @@ export class DatabaseStorage implements IStorage {
       price: insertTask.price ?? 0,
       category: insertTask.category ?? null,
       description: insertTask.description ?? null,
+      examplePhotoUrl: insertTask.examplePhotoUrl ?? null,
     };
     const [result] = await db.insert(tasks).values(taskData as any);
     const insertId = (result as any).insertId;
@@ -172,6 +175,7 @@ export class DatabaseStorage implements IStorage {
       workerId: tasks.workerId,
       requiresPhoto: tasks.requiresPhoto,
       photoUrl: tasks.photoUrl,
+      examplePhotoUrl: tasks.examplePhotoUrl,
       isCompleted: tasks.isCompleted,
       weekDays: tasks.weekDays,
       monthDay: tasks.monthDay,
@@ -207,6 +211,7 @@ export class DatabaseStorage implements IStorage {
       workerId: tasks.workerId,
       requiresPhoto: tasks.requiresPhoto,
       photoUrl: tasks.photoUrl,
+      examplePhotoUrl: tasks.examplePhotoUrl,
       isCompleted: tasks.isCompleted,
       weekDays: tasks.weekDays,
       monthDay: tasks.monthDay,

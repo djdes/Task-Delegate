@@ -22,6 +22,7 @@ export const tasks = mysqlTable("tasks", {
   workerId: int("worker_id"),
   requiresPhoto: boolean("requires_photo").notNull().default(false),
   photoUrl: varchar("photo_url", { length: 500 }),
+  examplePhotoUrl: varchar("example_photo_url", { length: 500 }), // Пример фото для задачи
   isCompleted: boolean("is_completed").notNull().default(false),
   weekDays: varchar("week_days", { length: 20 }), // JSON массив дней: [0,1,2,3,4,5,6] где 0=Вс, 1=Пн, ..., 6=Сб
   monthDay: int("month_day"), // День месяца (1-31) для отображения задачи
@@ -76,6 +77,7 @@ export const insertTaskSchema = createInsertSchema(tasks).pick({
   requiresPhoto: true,
 }).extend({
   photoUrl: z.string().nullable().optional(),
+  examplePhotoUrl: z.string().nullable().optional(), // URL примера фото
   isCompleted: z.boolean().optional().default(false),
   weekDays: z.array(z.number().min(0).max(6)).nullable().optional(), // массив дней недели [0-6]
   monthDay: z.number().min(1).max(31).nullable().optional(), // день месяца (1-31)

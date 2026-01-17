@@ -1,3 +1,4 @@
+import { useState, useRef } from "react";
 import { useLocation } from "wouter";
 import { useCreateTask } from "@/hooks/use-tasks";
 import { useUsers } from "@/hooks/use-users";
@@ -6,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
-import { ArrowLeft, User, Plus, Calendar, RefreshCw, CalendarDays, Coins, Tag, FileText } from "lucide-react";
+import { ArrowLeft, User, Plus, Calendar, RefreshCw, CalendarDays, Coins, Tag, FileText, ImagePlus, X } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
@@ -57,6 +58,9 @@ export default function CreateTask() {
   const createTask = useCreateTask();
   const { data: users = [] } = useUsers();
   const { toast } = useToast();
+  const [examplePhotoFile, setExamplePhotoFile] = useState<File | null>(null);
+  const [examplePhotoPreview, setExamplePhotoPreview] = useState<string | null>(null);
+  const examplePhotoInputRef = useRef<HTMLInputElement>(null);
 
   // Проверка прав администратора
   if (!user || !user.isAdmin) {
@@ -91,7 +95,57 @@ export default function CreateTask() {
     },
   });
 
-  const onSubmit = (values: FormValues) => {
+  const handleExamplePhotoSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (!file.type.startsWith("image/")) {
+        toast({
+          title: "Ошибка",
+          description: "Выберите изображение",
+          variant: "destructive",
+        });
+        return;
+      }
+      setExamplePhotoFile(file);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setExamplePhotoPreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const removeExamplePhoto = () => {
+    setExamplePhotoFile(null);
+    setExamplePhotoPreview(null);
+    if (examplePhotoInputRef.current) {
+      examplePhotoInputRef.current.value = "";
+    }
+  };
+
+  const uploadExamplePhoto = async (taskId: number) => {
+    if (!examplePhotoFile) return;
+
+    const formData = new FormData();
+    formData.append("photo", examplePhotoFile);
+
+    try {
+      const response = await fetch(`/api/tasks/${taskId}/example-photo`, {
+        method: "POST",
+        credentials: "include",
+        body: formData,
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        console.error("Error uploading example photo:", error);
+      }
+    } catch (error) {
+      console.error("Error uploading example photo:", error);
+    }
+  };
+
+  const onSubmit = async (values: FormValues) => {
     const taskData = {
       title: values.title,
       workerId: values.workerId,
@@ -104,7 +158,11 @@ export default function CreateTask() {
       description: values.description || null,
     };
     createTask.mutate(taskData as any, {
-      onSuccess: () => {
+      onSuccess: async (createdTask: any) => {
+        // Если есть пример фото, загружаем его
+        if (examplePhotoFile && createdTask?.id) {
+          await uploadExamplePhoto(createdTask.id);
+        }
         toast({
           title: "Успешно",
           description: "Задача создана",
@@ -279,21 +337,71 @@ export default function CreateTask() {
               control={form.control}
               name="requiresPhoto"
               render={({ field }) => (
-                <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border border-border/50 p-4">
-                  <FormControl>
-                    <Checkbox
-                      checked={field.value}
-                      onCheckedChange={field.onChange}
-                    />
-                  </FormControl>
-                  <div className="space-y-1 leading-none">
-                    <FormLabel className="cursor-pointer">
-                      Добавить фото результатов
-                    </FormLabel>
-                    <p className="text-xs text-muted-foreground">
-                      Пользователь должен будет загрузить фотографию перед завершением задачи
-                    </p>
+                <FormItem className="rounded-md border border-border/50 p-4 space-y-4">
+                  <div className="flex flex-row items-start space-x-3 space-y-0">
+                    <FormControl>
+                      <Checkbox
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                      />
+                    </FormControl>
+                    <div className="space-y-1 leading-none">
+                      <FormLabel className="cursor-pointer">
+                        Добавить фото результатов
+                      </FormLabel>
+                      <p className="text-xs text-muted-foreground">
+                        Пользователь должен будет загрузить фотографию перед завершением задачи
+                      </p>
+                    </div>
                   </div>
+
+                  {/* Секция загрузки примера фото - показывается только если галочка установлена */}
+                  {field.value && (
+                    <div className="pt-3 border-t border-border/30">
+                      <div className="flex items-center gap-2 mb-2">
+                        <ImagePlus className="w-4 h-4 text-muted-foreground" />
+                        <span className="text-sm font-medium">Пример фото (необязательно)</span>
+                      </div>
+                      <p className="text-xs text-muted-foreground mb-3">
+                        Загрузите пример того, как должна выглядеть выполненная задача
+                      </p>
+
+                      {examplePhotoPreview ? (
+                        <div className="relative inline-block">
+                          <img
+                            src={examplePhotoPreview}
+                            alt="Пример фото"
+                            className="w-32 h-32 object-cover rounded-lg border border-border"
+                          />
+                          <button
+                            type="button"
+                            onClick={removeExamplePhoto}
+                            className="absolute -top-2 -right-2 p-1 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors"
+                          >
+                            <X className="w-3 h-3" />
+                          </button>
+                        </div>
+                      ) : (
+                        <>
+                          <input
+                            ref={examplePhotoInputRef}
+                            type="file"
+                            accept="image/*"
+                            onChange={handleExamplePhotoSelect}
+                            className="hidden"
+                            id="example-photo-upload"
+                          />
+                          <label
+                            htmlFor="example-photo-upload"
+                            className="inline-flex items-center gap-2 px-4 py-2 border border-dashed border-primary/40 bg-primary/5 rounded-lg cursor-pointer hover:border-primary hover:bg-primary/10 transition-all"
+                          >
+                            <ImagePlus className="w-4 h-4 text-primary" />
+                            <span className="text-sm font-medium text-primary">Выбрать фото</span>
+                          </label>
+                        </>
+                      )}
+                    </div>
+                  )}
                 </FormItem>
               )}
             />

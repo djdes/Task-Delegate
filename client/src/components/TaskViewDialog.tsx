@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import { Upload, X, CheckCircle2, Trash2, RotateCcw, Camera, Check, Coins } from "lucide-react";
+import { Upload, X, CheckCircle2, Trash2, RotateCcw, Camera, Check, Coins, ImageIcon } from "lucide-react";
 import type { Task } from "@shared/schema";
 
 interface TaskViewDialogProps {
@@ -35,6 +35,7 @@ export function TaskViewDialog({
   const [preview, setPreview] = useState<string | null>(null);
   const [currentTask, setCurrentTask] = useState<Task | null>(task);
   const [isPhotoFullscreen, setIsPhotoFullscreen] = useState(false);
+  const [isExamplePhotoFullscreen, setIsExamplePhotoFullscreen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -250,6 +251,18 @@ export function TaskViewDialog({
         </div>
 
         <div className="p-4 space-y-4">
+          {/* Example photo button - shown if examplePhotoUrl exists */}
+          {(currentTask as any).examplePhotoUrl && (
+            <button
+              type="button"
+              onClick={() => setIsExamplePhotoFullscreen(true)}
+              className="flex items-center gap-2 w-full px-4 py-3 bg-blue-50 hover:bg-blue-100 border border-blue-200 rounded-xl transition-colors"
+            >
+              <ImageIcon className="w-5 h-5 text-blue-600" />
+              <span className="text-sm font-medium text-blue-700">Посмотреть пример фото</span>
+            </button>
+          )}
+
           {/* Photo upload section */}
           {(currentTask.requiresPhoto === true || (currentTask.requiresPhoto as any) === 1) && (
             <div className="space-y-3">
@@ -377,6 +390,30 @@ export function TaskViewDialog({
             className="max-w-[95vw] max-h-[90vh] object-contain rounded-2xl"
             onClick={(e) => e.stopPropagation()}
           />
+        </div>
+      )}
+
+      {/* Fullscreen example photo modal */}
+      {isExamplePhotoFullscreen && (currentTask as any)?.examplePhotoUrl && (
+        <div
+          className="fixed inset-0 z-[100] bg-black/95 flex items-center justify-center cursor-pointer"
+          onClick={() => setIsExamplePhotoFullscreen(false)}
+        >
+          <button
+            className="absolute top-4 right-4 p-3 bg-white/10 hover:bg-white/20 rounded-full transition-colors"
+            onClick={() => setIsExamplePhotoFullscreen(false)}
+          >
+            <X className="w-6 h-6 text-white" />
+          </button>
+          <div className="text-center">
+            <p className="text-white/80 text-sm mb-4">Пример выполненной задачи</p>
+            <img
+              src={(currentTask as any).examplePhotoUrl}
+              alt="Пример фото"
+              className="max-w-[95vw] max-h-[85vh] object-contain rounded-2xl"
+              onClick={(e) => e.stopPropagation()}
+            />
+          </div>
         </div>
       )}
     </Dialog>
