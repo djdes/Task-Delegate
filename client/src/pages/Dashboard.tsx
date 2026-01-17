@@ -291,29 +291,19 @@ export default function Dashboard() {
 
       {/* Main Content */}
       <main className="app-content">
-        {/* Progress Card */}
+        {/* Compact Progress Bar */}
         {totalCount > 0 && (
-          <div className="progress-card animate-slide-up">
-            <div className="progress-header">
-              <div className="progress-stats">
-                <div className={`progress-stats-icon ${isAllCompleted ? 'bg-green-100' : 'bg-blue-100'}`}>
-                  <CheckCircle2 className={`w-5 h-5 ${isAllCompleted ? 'text-green-600' : 'text-blue-600'}`} />
-                </div>
-                <div>
-                  <p className="progress-stats-text">Выполнено</p>
-                  <p className="text-xs text-gray-500">{completedCount} из {totalCount} задач</p>
-                </div>
-              </div>
-              <span className={`progress-percentage ${isAllCompleted ? 'text-green-600' : 'text-primary'}`}>
-                {progressPercent}%
-              </span>
-            </div>
+          <div className="progress-card">
+            <span className="progress-text">{completedCount}/{totalCount}</span>
             <div className="progress-bar-container">
               <div
                 className={`progress-bar-fill ${isAllCompleted ? 'completed' : 'in-progress'}`}
                 style={{ width: `${progressPercent}%` }}
               />
             </div>
+            <span className={`progress-percentage ${isAllCompleted ? 'text-green-600' : 'text-gray-700'}`}>
+              {progressPercent}%
+            </span>
           </div>
         )}
 
