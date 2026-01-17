@@ -7,23 +7,18 @@ import { useAuth } from "@/contexts/AuthContext";
 import { TaskViewDialog } from "@/components/TaskViewDialog";
 import { DuplicateTaskDialog } from "@/components/DuplicateTaskDialog";
 import type { Task } from "@shared/schema";
-import { Button } from "@/components/ui/button";
 import {
   CheckCircle2,
-  Circle,
   Edit2,
   Trash2,
-  User,
   Plus,
   Inbox,
-  Filter,
   Calendar,
   CalendarDays,
   Copy,
   Coins,
   Tag,
   Home,
-  ListTodo,
   Settings,
   LogOut,
   ChevronRight,
@@ -31,7 +26,8 @@ import {
   Check,
   RefreshCw,
   Menu,
-  X
+  X,
+  User
 } from "lucide-react";
 import {
   Select,
@@ -153,6 +149,8 @@ export default function Dashboard() {
 
   const completedCount = filteredTasks.filter(t => t.isCompleted).length;
   const totalCount = filteredTasks.length;
+  const progressPercent = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0;
+  const isAllCompleted = completedCount === totalCount && totalCount > 0;
 
   const handleTaskClick = (task: typeof tasks[0]) => {
     setSelectedTask(task);
@@ -202,12 +200,15 @@ export default function Dashboard() {
     }
   }, [user, authLoading, setLocation]);
 
-  if (authLoading) {
+  // Loading state
+  if (authLoading || loadingTasks) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="flex flex-col items-center gap-4">
           <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
-          <span className="text-base text-muted-foreground">Загрузка...</span>
+          <span className="text-base text-muted-foreground">
+            {authLoading ? "Загрузка..." : "Загрузка задач..."}
+          </span>
         </div>
       </div>
     );
@@ -217,47 +218,37 @@ export default function Dashboard() {
     return null;
   }
 
-  if (loadingTasks) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="flex flex-col items-center gap-4">
-          <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
-          <span className="text-base text-muted-foreground">Загрузка задач...</span>
-        </div>
-      </div>
-    );
-  }
-
   return (
-    <div className="desktop-layout">
-      {/* Header - Ozon style */}
-      <header className="ozon-header">
-        <div className="flex items-center justify-between max-w-6xl mx-auto lg:px-0">
-          <div className="flex items-center gap-2.5">
+    <div className="app-layout">
+      {/* Header */}
+      <header className="app-header">
+        <div className="app-header-content">
+          <div className="flex items-center gap-3">
             {/* Menu button for mobile (non-admin) */}
             {!user.isAdmin && (
               <button
                 onClick={() => setIsMenuOpen(!isMenuOpen)}
-                className="lg:hidden p-2 rounded-xl bg-white/10 hover:bg-white/20 transition-colors"
+                className="lg:hidden header-button"
                 aria-label="Меню"
               >
-                {isMenuOpen ? <X className="w-5 h-5 text-white" /> : <Menu className="w-5 h-5 text-white" />}
+                {isMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
               </button>
             )}
+
             {/* Refresh button */}
             <button
               onClick={handleRefresh}
               disabled={isRefreshing}
-              className="refresh-btn"
+              className="header-button"
               aria-label="Обновить"
             >
               <RefreshCw className={`w-5 h-5 ${isRefreshing ? 'animate-spin' : ''}`} />
             </button>
-            <div className="min-w-0 flex-1">
-              <h1 className="text-lg sm:text-xl font-black whitespace-nowrap truncate bg-gradient-to-r from-white via-yellow-200 to-white bg-[length:200%_100%] animate-[text-shimmer_3s_ease-in-out_infinite] bg-clip-text text-transparent">
-                Задачи
-              </h1>
-              <p className="text-sm text-white/80 font-medium truncate">
+
+            {/* Title */}
+            <div className="min-w-0">
+              <h1 className="header-title">Задачи</h1>
+              <p className="header-subtitle truncate">
                 {user.name || user.phone}
                 {user.isAdmin && " (Админ)"}
               </p>
@@ -266,13 +257,9 @@ export default function Dashboard() {
 
           {/* Bonus balance for workers */}
           {!user.isAdmin && (user as any).bonusBalance > 0 && (
-            <div className="relative bg-gradient-to-r from-yellow-400/30 to-yellow-500/20 backdrop-blur-sm rounded-xl px-3 py-2 border border-yellow-300/30 shadow-lg shadow-yellow-500/10 overflow-hidden">
-              {/* Shimmer animation */}
-              <div className="absolute inset-0 -translate-x-full animate-[shimmer_2s_infinite] bg-gradient-to-r from-transparent via-white/20 to-transparent" />
-              <div className="flex items-center gap-1.5 whitespace-nowrap relative z-10">
-                <Coins className="w-5 h-5 text-yellow-300 animate-pulse" />
-                <span className="text-base font-bold text-white drop-shadow-sm">{(user as any).bonusBalance} ₽</span>
-              </div>
+            <div className="bonus-badge">
+              <Coins className="w-5 h-5 text-yellow-300" />
+              <span className="bonus-badge-text">{(user as any).bonusBalance} ₽</span>
             </div>
           )}
         </div>
@@ -280,19 +267,17 @@ export default function Dashboard() {
 
       {/* Mobile dropdown menu for non-admin */}
       {!user.isAdmin && isMenuOpen && (
-        <div className="lg:hidden absolute top-16 left-4 right-4 z-50 bg-white rounded-2xl shadow-xl border border-border overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
+        <div className="dropdown-menu animate-fade-in">
           <button
-            className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-muted/50 transition-colors"
-            onClick={() => {
-              setIsMenuOpen(false);
-            }}
+            className="dropdown-item w-full"
+            onClick={() => setIsMenuOpen(false)}
           >
             <Home className="w-5 h-5 text-primary" />
             <span className="font-medium">Главная</span>
           </button>
-          <div className="h-px bg-border" />
+          <div className="dropdown-divider" />
           <button
-            className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-muted/50 transition-colors text-red-500"
+            className="dropdown-item danger w-full"
             onClick={() => {
               setIsMenuOpen(false);
               logout();
@@ -304,39 +289,41 @@ export default function Dashboard() {
         </div>
       )}
 
-      {/* Progress bar - compact */}
-      {totalCount > 0 && (
-        <div className="px-4 py-2 max-w-6xl mx-auto bg-white/80 dark:bg-gray-800/80 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 mx-4 lg:mx-auto">
-          <div className="flex items-center gap-3">
-            <div className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-200 whitespace-nowrap">
-              <CheckCircle2 className="w-4 h-4 text-green-500" />
-              <span className="font-semibold">{completedCount}/{totalCount}</span>
+      {/* Main Content */}
+      <main className="app-content">
+        {/* Progress Card */}
+        {totalCount > 0 && (
+          <div className="progress-card animate-slide-up">
+            <div className="progress-header">
+              <div className="progress-stats">
+                <div className={`progress-stats-icon ${isAllCompleted ? 'bg-green-100' : 'bg-blue-100'}`}>
+                  <CheckCircle2 className={`w-5 h-5 ${isAllCompleted ? 'text-green-600' : 'text-blue-600'}`} />
+                </div>
+                <div>
+                  <p className="progress-stats-text">Выполнено</p>
+                  <p className="text-xs text-gray-500">{completedCount} из {totalCount} задач</p>
+                </div>
+              </div>
+              <span className={`progress-percentage ${isAllCompleted ? 'text-green-600' : 'text-primary'}`}>
+                {progressPercent}%
+              </span>
             </div>
-            <div className="flex-1 h-2.5 bg-gray-200 dark:bg-gray-600 rounded-full overflow-hidden">
+            <div className="progress-bar-container">
               <div
-                className={`h-full rounded-full transition-all duration-500 ${
-                  completedCount === totalCount
-                    ? 'bg-gradient-to-r from-green-500 to-green-400'
-                    : 'bg-gradient-to-r from-primary to-primary/70'
-                }`}
-                style={{ width: `${(completedCount / totalCount) * 100}%` }}
+                className={`progress-bar-fill ${isAllCompleted ? 'completed' : 'in-progress'}`}
+                style={{ width: `${progressPercent}%` }}
               />
             </div>
-            <span className={`text-sm font-bold ${completedCount === totalCount ? 'text-green-600' : 'text-primary'}`}>
-              {Math.round((completedCount / totalCount) * 100)}%
-            </span>
           </div>
-        </div>
-      )}
+        )}
 
-      {/* Filters - only for admin */}
-      {user?.isAdmin && (
-        <div className="filters-section">
-          <div className="flex flex-wrap gap-3 max-w-6xl mx-auto lg:px-0">
+        {/* Filters - only for admin */}
+        {user?.isAdmin && (
+          <div className="filters-bar">
             {categories.length > 0 && (
               <Select value={filterByCategory} onValueChange={setFilterByCategory}>
-                <SelectTrigger className="h-10 w-auto min-w-[140px] rounded-xl text-sm font-medium">
-                  <Tag className="w-4 h-4 mr-1.5 text-muted-foreground" />
+                <SelectTrigger className="h-10 w-auto min-w-[140px] rounded-xl text-sm font-medium bg-white border-gray-200">
+                  <Tag className="w-4 h-4 mr-1.5 text-gray-400" />
                   <SelectValue placeholder="Категория" />
                 </SelectTrigger>
                 <SelectContent>
@@ -351,124 +338,119 @@ export default function Dashboard() {
               </Select>
             )}
 
-            {user?.isAdmin && (
-              <Select value={filterByUserId} onValueChange={setFilterByUserId}>
-                <SelectTrigger className="h-10 w-auto min-w-[150px] rounded-xl text-sm font-medium">
-                  <Filter className="w-4 h-4 mr-1.5 text-muted-foreground" />
-                  <SelectValue placeholder="Исполнитель" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Все задачи</SelectItem>
-                  <SelectItem value="unassigned">Не назначенные</SelectItem>
-                  {users.map((u) => (
-                    <SelectItem key={u.id} value={u.id.toString()}>
-                      {u.name || u.phone}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            )}
+            <Select value={filterByUserId} onValueChange={setFilterByUserId}>
+              <SelectTrigger className="h-10 w-auto min-w-[150px] rounded-xl text-sm font-medium bg-white border-gray-200">
+                <User className="w-4 h-4 mr-1.5 text-gray-400" />
+                <SelectValue placeholder="Исполнитель" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Все сотрудники</SelectItem>
+                <SelectItem value="unassigned">Не назначенные</SelectItem>
+                {users.map((u) => (
+                  <SelectItem key={u.id} value={u.id.toString()}>
+                    {u.name || u.phone}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
-        </div>
-      )}
+        )}
 
-      {/* Task List */}
-      <main className="desktop-content">
+        {/* Task List */}
         {filteredTasks.length === 0 ? (
           <div className="empty-state">
             <div className="empty-state-icon">
-              <Inbox className="w-16 h-16 text-muted-foreground" />
+              <Inbox className="w-12 h-12 text-gray-400" />
             </div>
-            <h3 className="text-2xl font-black text-foreground mb-3">Нет задач</h3>
-            <p className="text-lg text-muted-foreground mb-8 max-w-sm">
+            <h3 className="empty-state-title">
+              {user?.isAdmin ? "Нет задач" : "Задач на сегодня нет"}
+            </h3>
+            <p className="empty-state-text">
               {user?.isAdmin
                 ? "Создайте первую задачу для начала работы"
-                : "Вам пока не назначили задач"}
+                : "Отдохните или проверьте расписание позже"}
             </p>
             {user?.isAdmin && (
               <button
                 onClick={() => setLocation("/tasks/new")}
-                className="ozon-btn ozon-btn-primary flex items-center gap-3"
+                className="empty-state-button"
               >
-                <Plus className="w-6 h-6" />
+                <Plus className="w-5 h-5" />
                 Создать задачу
               </button>
             )}
           </div>
         ) : (
-          <div className="task-grid">
+          <div className="task-list">
             {filteredTasks.map(task => {
-              const isCompleted = Boolean((task as any).isCompleted);
+              const isCompleted = Boolean(task.isCompleted);
               const hasPrice = (task as any).price > 0;
               const hasCategory = (task as any).category;
               const requiresPhoto = task.requiresPhoto && !task.photoUrl;
+              const weekDays = (task as any).weekDays;
+              const monthDay = (task as any).monthDay;
 
               return (
                 <div
                   key={task.id}
-                  className={`task-card ${isCompleted ? 'task-card-completed' : ''}`}
+                  className={`task-card ${isCompleted ? 'completed' : ''}`}
                   onClick={() => handleTaskClick(task)}
                 >
                   <div className="flex items-start gap-3">
                     {/* Checkbox */}
                     <button
                       onClick={(e) => toggleTaskComplete(task.id, e)}
-                      className={`ozon-checkbox mt-0.5 ${isCompleted ? 'checked' : ''}`}
+                      className={`task-checkbox ${isCompleted ? 'checked' : ''}`}
                     >
-                      {isCompleted && (
-                        <Check className="w-4 h-4 text-primary-foreground" />
-                      )}
+                      {isCompleted && <Check className="w-4 h-4 text-white" />}
                     </button>
 
                     {/* Content */}
-                    <div className="flex-1 min-w-0">
-                      <h3 className={`text-base font-semibold ${isCompleted ? 'line-through text-muted-foreground' : 'text-foreground'}`}>
-                        {task.title}
-                      </h3>
+                    <div className="task-content">
+                      <h3 className="task-title">{task.title}</h3>
 
-                      {/* Task meta info */}
-                      <div className="flex flex-wrap items-center gap-2 mt-1.5">
-                        {/* Worker badge - only for admin */}
+                      {/* Task meta */}
+                      <div className="task-meta">
+                        {/* Worker - only for admin */}
                         {user?.isAdmin && task.workerId && (
-                          <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
-                            <div className="user-avatar-sm">
+                          <div className="worker-info">
+                            <div className="worker-avatar">
                               {getUserInitials(task.workerId)}
                             </div>
-                            <span className="font-medium">{getUserName(task.workerId)}</span>
+                            <span>{getUserName(task.workerId)}</span>
                           </div>
                         )}
 
-                        {/* Photo required indicator */}
+                        {/* Photo required */}
                         {requiresPhoto && !isCompleted && (
-                          <div className="flex items-center gap-1 text-sm text-orange-500 font-medium">
-                            <Camera className="w-4 h-4" />
+                          <div className="task-badge photo">
+                            <Camera className="w-3.5 h-3.5" />
                             <span>Фото</span>
                           </div>
                         )}
-                      </div>
 
-                      {/* Badges row */}
-                      <div className="flex flex-wrap items-center gap-2 mt-2">
+                        {/* Price */}
                         {hasPrice && (
-                          <div className="price-badge">
-                            <Coins className="w-4 h-4" />
+                          <div className="task-badge price">
+                            <Coins className="w-3.5 h-3.5" />
                             <span>+{(task as any).price} ₽</span>
                           </div>
                         )}
 
+                        {/* Category */}
                         {hasCategory && (
-                          <div className="category-badge">
+                          <div className="task-badge category">
                             <Tag className="w-3.5 h-3.5" />
                             <span>{(task as any).category}</span>
                           </div>
                         )}
 
-                        {/* Schedule info for admin */}
-                        {user?.isAdmin && (task as any).weekDays && (task as any).weekDays.length > 0 && (
-                          <div className="flex items-center gap-1.5 text-sm font-medium text-muted-foreground bg-muted px-3 py-1.5 rounded-xl">
-                            <Calendar className="w-4 h-4" />
+                        {/* Schedule - only for admin */}
+                        {user?.isAdmin && weekDays && weekDays.length > 0 && (
+                          <div className="task-badge schedule">
+                            <Calendar className="w-3.5 h-3.5" />
                             <span>
-                              {((task as any).weekDays as number[])
+                              {(weekDays as number[])
                                 .sort((a, b) => (a === 0 ? 7 : a) - (b === 0 ? 7 : b))
                                 .map(d => WEEK_DAY_SHORT_NAMES[d])
                                 .join(", ")}
@@ -476,46 +458,40 @@ export default function Dashboard() {
                           </div>
                         )}
 
-                        {user?.isAdmin && (task as any).monthDay && (
-                          <div className="flex items-center gap-1.5 text-sm font-medium text-muted-foreground bg-muted px-3 py-1.5 rounded-xl">
-                            <CalendarDays className="w-4 h-4" />
-                            <span>{(task as any).monthDay} число</span>
+                        {user?.isAdmin && monthDay && (
+                          <div className="task-badge schedule">
+                            <CalendarDays className="w-3.5 h-3.5" />
+                            <span>{monthDay} число</span>
                           </div>
                         )}
                       </div>
                     </div>
 
-                    {/* Arrow / Actions */}
+                    {/* Actions */}
                     <div className="flex items-center">
                       {user?.isAdmin ? (
-                        <div className="flex items-center gap-1">
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-9 w-9 rounded-xl"
+                        <div className="task-actions">
+                          <button
+                            className="task-action-btn"
                             onClick={(e) => {
                               e.stopPropagation();
                               setLocation(`/tasks/${task.id}/edit`);
                             }}
                           >
-                            <Edit2 className="w-4 h-4 text-muted-foreground" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-9 w-9 rounded-xl"
+                            <Edit2 className="w-4 h-4" />
+                          </button>
+                          <button
+                            className="task-action-btn"
                             onClick={(e) => {
                               e.stopPropagation();
                               setDuplicateTask(task);
                               setIsDuplicateDialogOpen(true);
                             }}
                           >
-                            <Copy className="w-4 h-4 text-muted-foreground" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-9 w-9 rounded-xl"
+                            <Copy className="w-4 h-4" />
+                          </button>
+                          <button
+                            className="task-action-btn delete"
                             onClick={(e) => {
                               e.stopPropagation();
                               if (confirm("Удалить задачу?")) {
@@ -523,11 +499,13 @@ export default function Dashboard() {
                               }
                             }}
                           >
-                            <Trash2 className="w-4 h-4 text-muted-foreground hover:text-destructive" />
-                          </Button>
+                            <Trash2 className="w-4 h-4" />
+                          </button>
                         </div>
                       ) : (
-                        <ChevronRight className="w-5 h-5 text-muted-foreground" />
+                        <div className="task-arrow">
+                          <ChevronRight className="w-5 h-5" />
+                        </div>
                       )}
                     </div>
                   </div>
@@ -542,35 +520,35 @@ export default function Dashboard() {
       {user?.isAdmin && filteredTasks.length > 0 && (
         <button
           onClick={() => setLocation("/tasks/new")}
-          className="things-fab"
+          className="fab-button"
         >
           <Plus className="w-7 h-7" />
         </button>
       )}
 
-      {/* Bottom Navigation - only for admin on mobile, hidden for regular users who use hamburger menu */}
+      {/* Bottom Navigation */}
       {user?.isAdmin && (
-        <nav className="ozon-bottom-nav">
-          <div className="flex items-center justify-around lg:flex-col lg:items-stretch lg:gap-1">
-            <button className="ozon-bottom-nav-item active">
+        <nav className="bottom-nav">
+          <div className="bottom-nav-content">
+            <button className="bottom-nav-item active">
               <Home className="w-5 h-5" />
-              <span className="text-xs font-medium">Главная</span>
+              <span>Главная</span>
             </button>
 
             <button
-              className="ozon-bottom-nav-item"
+              className="bottom-nav-item"
               onClick={() => setLocation("/admin/users")}
             >
               <Settings className="w-5 h-5" />
-              <span className="text-xs font-medium">Настройки</span>
+              <span>Настройки</span>
             </button>
 
             <button
-              className="ozon-bottom-nav-item"
+              className="bottom-nav-item"
               onClick={() => logout()}
             >
               <LogOut className="w-5 h-5" />
-              <span className="text-xs font-medium">Выход</span>
+              <span>Выход</span>
             </button>
           </div>
         </nav>
