@@ -122,7 +122,7 @@
   /* ===== MAIN LAYOUT ===== */
   .app-layout {
     @apply min-h-screen bg-background;
-    padding-top: 56px;
+    padding-top: 64px;
     padding-bottom: 72px;
   }
 

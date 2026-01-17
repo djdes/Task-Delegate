@@ -36,7 +36,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { useToast } from "@/hooks/use-toast";
 
 const WEEK_DAY_SHORT_NAMES: { [key: number]: string } = {
   0: "Вс",
@@ -54,7 +53,6 @@ export default function Dashboard() {
   const queryClient = useQueryClient();
   const { data: users = [] } = useUsers();
   const { data: tasks = [], isLoading: loadingTasks } = useTasks();
-  const { toast } = useToast();
 
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [isTaskDialogOpen, setIsTaskDialogOpen] = useState(false);
@@ -257,7 +255,10 @@ export default function Dashboard() {
 
           {/* Bonus balance for workers */}
           {!user.isAdmin && (user as any).bonusBalance > 0 && (
-            <div className="bonus-badge">
+            <div
+              className="bonus-badge cursor-pointer"
+              onClick={() => alert("Дополнительная премия выплачивается 2 раза в месяц, 1 и 16 числа. По всем вопросам обращайтесь к руководителю/заведующему.")}
+            >
               <Coins className="w-5 h-5 text-yellow-300" />
               <span className="bonus-badge-text">{(user as any).bonusBalance} ₽</span>
             </div>

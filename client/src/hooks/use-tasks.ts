@@ -1,7 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api, buildUrl } from "@shared/routes";
 import type { InsertTask, Task } from "@shared/schema";
-import { useToast } from "@/hooks/use-toast";
 
 export function useTasks() {
   return useQuery<Task[]>({
@@ -32,7 +31,6 @@ export function useTask(id: number) {
 
 export function useCreateTask() {
   const queryClient = useQueryClient();
-  const { toast } = useToast();
 
   return useMutation({
     mutationFn: async (data: InsertTask) => {
@@ -68,17 +66,12 @@ export function useCreateTask() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [api.tasks.list.path] });
-      toast({ title: "Success", description: "Task created successfully" });
-    },
-    onError: (error) => {
-      toast({ title: "Error", description: error.message, variant: "destructive" });
     },
   });
 }
 
 export function useUpdateTask() {
   const queryClient = useQueryClient();
-  const { toast } = useToast();
 
   return useMutation({
     mutationFn: async ({ id, ...updates }: { id: number } & Partial<InsertTask>) => {
@@ -108,17 +101,12 @@ export function useUpdateTask() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [api.tasks.list.path] });
-      toast({ title: "Success", description: "Task updated successfully" });
-    },
-    onError: (error) => {
-      toast({ title: "Error", description: error.message, variant: "destructive" });
     },
   });
 }
 
 export function useDeleteTask() {
   const queryClient = useQueryClient();
-  const { toast } = useToast();
 
   return useMutation({
     mutationFn: async (id: number) => {
@@ -131,17 +119,12 @@ export function useDeleteTask() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [api.tasks.list.path] });
-      toast({ title: "Success", description: "Task deleted successfully" });
-    },
-    onError: (error) => {
-      toast({ title: "Error", description: error.message, variant: "destructive" });
     },
   });
 }
 
 export function useCompleteTask() {
   const queryClient = useQueryClient();
-  const { toast } = useToast();
 
   return useMutation({
     mutationFn: async (id: number) => {
@@ -158,17 +141,12 @@ export function useCompleteTask() {
     onSuccess: (task) => {
       queryClient.invalidateQueries({ queryKey: [api.tasks.list.path] });
       queryClient.invalidateQueries({ queryKey: [api.tasks.get.path, task.id] });
-      toast({ title: "Готово", description: "Задача отмечена выполненной" });
-    },
-    onError: (error: any) => {
-      toast({ title: "Ошибка", description: error.message || "Не удалось завершить задачу", variant: "destructive" });
     },
   });
 }
 
 export function useUncompleteTask() {
   const queryClient = useQueryClient();
-  const { toast } = useToast();
 
   return useMutation({
     mutationFn: async (id: number) => {
@@ -202,10 +180,6 @@ export function useUncompleteTask() {
       if (task?.id) {
         queryClient.invalidateQueries({ queryKey: [api.tasks.get.path, task.id] });
       }
-      toast({ title: "Готово", description: "Задача возвращена в работу" });
-    },
-    onError: (error: any) => {
-      toast({ title: "Ошибка", description: error.message || "Не удалось вернуть задачу", variant: "destructive" });
     },
   });
 }
