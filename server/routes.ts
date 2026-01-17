@@ -6,6 +6,7 @@ import { existsSync, mkdirSync } from "fs";
 import { storage } from "./storage";
 import { api } from "@shared/routes";
 import { z } from "zod";
+import { sendTaskCompletedEmail } from "./mail";
 
 // Настройка загрузки файлов
 const uploadsDir = path.join(process.cwd(), "uploads");
@@ -404,6 +405,11 @@ export async function registerRoutes(
         console.log(`Added ${task.price} to user ${task.workerId} balance for completing task ${taskId}`);
       }
 
+      // Отправляем email админу
+      const worker = task.workerId ? await storage.getUserById(task.workerId) : null;
+      const workerName = worker?.name || worker?.phone || "Неизвестный";
+      sendTaskCompletedEmail(task.title, workerName);
+
       res.json(updatedTask);
     } catch (err: any) {
       console.error("Error completing task:", err);
@@ -479,6 +485,41 @@ export async function registerRoutes(
       }
       console.error('Error creating user:', err);
       res.status(500).json({ message: 'Ошибка создания пользователя', error: err.message });
+    }
+  });
+
+  app.put(api.users.update.path, requireAuth, requireAdmin, async (req, res) => {
+    try {
+      const userId = Number(req.params.id);
+      const input = api.users.update.input.parse(req.body);
+
+      // Проверяем, существует ли пользователь
+      const existingUser = await storage.getUserById(userId);
+      if (!existingUser) {
+        return res.status(404).json({ message: "Пользователь не найден" });
+      }
+
+      // Проверяем, не занят ли номер другим пользователем
+      const normalizedPhone = input.phone.replace(/\s+/g, "").replace(/-/g, "");
+      const userWithPhone = await storage.getUserByPhone(normalizedPhone);
+      if (userWithPhone && userWithPhone.id !== userId) {
+        return res.status(400).json({
+          message: "Пользователь с таким номером уже существует",
+          field: "phone",
+        });
+      }
+
+      const user = await storage.updateUser(userId, input);
+      res.json(user);
+    } catch (err: any) {
+      if (err instanceof z.ZodError) {
+        return res.status(400).json({
+          message: err.errors[0].message,
+          field: err.errors[0].path.join('.'),
+        });
+      }
+      console.error('Error updating user:', err);
+      res.status(500).json({ message: 'Ошибка обновления пользователя', error: err.message });
     }
   });
 

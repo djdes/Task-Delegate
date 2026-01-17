@@ -44,6 +44,17 @@ export const insertUserSchema = z.object({
   isAdmin: z.boolean().optional().default(false),
 });
 
+export const updateUserSchema = z.object({
+  phone: z.string().min(1, "Номер телефона обязателен").refine(
+    (val) => {
+      const normalized = val.replace(/\s+/g, "").replace(/-/g, "");
+      return /^\+7\d{9,10}$/.test(normalized);
+    },
+    "Неверный формат номера телефона (формат: +7XXXXXXXXX или +7XXXXXXXXXX)"
+  ),
+  name: z.string().nullable().optional(),
+});
+
 export const loginSchema = z.object({
   phone: z.string().min(1, "Номер телефона обязателен").refine(
     (val) => {
@@ -76,6 +87,7 @@ export const insertTaskSchema = createInsertSchema(tasks).pick({
 
 export type User = typeof users.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;
+export type UpdateUser = z.infer<typeof updateUserSchema>;
 export type LoginInput = z.infer<typeof loginSchema>;
 export type Worker = typeof workers.$inferSelect;
 export type InsertWorker = z.infer<typeof insertWorkerSchema>;

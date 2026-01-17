@@ -1,4 +1,4 @@
-import { workers, tasks, users, type Worker, type InsertWorker, type Task, type InsertTask, type User, type InsertUser } from "@shared/schema";
+import { workers, tasks, users, type Worker, type InsertWorker, type Task, type InsertTask, type User, type InsertUser, type UpdateUser } from "@shared/schema";
 import { db } from "./db";
 import { eq } from "drizzle-orm";
 
@@ -8,6 +8,7 @@ export interface IStorage {
   createUser(user: InsertUser): Promise<User>;
   getUserById(id: number): Promise<User | undefined>;
   getAllUsers(): Promise<User[]>;
+  updateUser(id: number, user: UpdateUser): Promise<User | undefined>;
   updateUserBalance(id: number, amount: number): Promise<User | undefined>;
   resetUserBalance(id: number): Promise<User | undefined>;
 
@@ -53,6 +54,16 @@ export class DatabaseStorage implements IStorage {
 
   async getAllUsers(): Promise<User[]> {
     return await db.select().from(users);
+  }
+
+  async updateUser(id: number, updateUser: UpdateUser): Promise<User | undefined> {
+    const normalizedPhone = updateUser.phone.replace(/\s+/g, "").replace(/-/g, "");
+    await db.update(users).set({
+      phone: normalizedPhone,
+      name: updateUser.name ?? null,
+    }).where(eq(users.id, id));
+    const [user] = await db.select().from(users).where(eq(users.id, id));
+    return user || undefined;
   }
 
   async updateUserBalance(id: number, amount: number): Promise<User | undefined> {
