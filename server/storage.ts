@@ -116,6 +116,7 @@ export class DatabaseStorage implements IStorage {
       workerId: tasks.workerId,
       requiresPhoto: tasks.requiresPhoto,
       photoUrl: tasks.photoUrl,
+      photoUrls: tasks.photoUrls,
       examplePhotoUrl: tasks.examplePhotoUrl,
       isCompleted: tasks.isCompleted,
       weekDays: tasks.weekDays,
@@ -125,10 +126,11 @@ export class DatabaseStorage implements IStorage {
       category: tasks.category,
       description: tasks.description,
     }).from(tasks);
-    // Парсим weekDays из JSON строки в массив
+    // Парсим weekDays и photoUrls из JSON строки в массив
     return result.map(task => ({
       ...task,
       weekDays: task.weekDays ? JSON.parse(task.weekDays) : null,
+      photoUrls: task.photoUrls ? JSON.parse(task.photoUrls) : [],
     })) as Task[];
   }
 
@@ -139,6 +141,7 @@ export class DatabaseStorage implements IStorage {
       workerId: tasks.workerId,
       requiresPhoto: tasks.requiresPhoto,
       photoUrl: tasks.photoUrl,
+      photoUrls: tasks.photoUrls,
       examplePhotoUrl: tasks.examplePhotoUrl,
       isCompleted: tasks.isCompleted,
       weekDays: tasks.weekDays,
@@ -152,14 +155,16 @@ export class DatabaseStorage implements IStorage {
     return {
       ...task,
       weekDays: task.weekDays ? JSON.parse(task.weekDays) : null,
+      photoUrls: task.photoUrls ? JSON.parse(task.photoUrls) : [],
     } as Task;
   }
 
   async createTask(insertTask: InsertTask): Promise<Task> {
-    // Сериализуем weekDays в JSON строку для хранения в БД
+    // Сериализуем weekDays и photoUrls в JSON строку для хранения в БД
     const taskData = {
       ...insertTask,
       weekDays: insertTask.weekDays ? JSON.stringify(insertTask.weekDays) : null,
+      photoUrls: insertTask.photoUrls ? JSON.stringify(insertTask.photoUrls) : null,
       monthDay: insertTask.monthDay ?? null,
       isRecurring: insertTask.isRecurring ?? true,
       price: insertTask.price ?? 0,
@@ -175,6 +180,7 @@ export class DatabaseStorage implements IStorage {
       workerId: tasks.workerId,
       requiresPhoto: tasks.requiresPhoto,
       photoUrl: tasks.photoUrl,
+      photoUrls: tasks.photoUrls,
       examplePhotoUrl: tasks.examplePhotoUrl,
       isCompleted: tasks.isCompleted,
       weekDays: tasks.weekDays,
@@ -187,15 +193,19 @@ export class DatabaseStorage implements IStorage {
     return {
       ...task,
       weekDays: task.weekDays ? JSON.parse(task.weekDays) : null,
+      photoUrls: task.photoUrls ? JSON.parse(task.photoUrls) : [],
     } as Task;
   }
 
   async updateTask(id: number, updates: Partial<InsertTask>): Promise<Task | undefined> {
-    // Сериализуем weekDays если оно передано
+    // Сериализуем weekDays и photoUrls если они переданы
     const updateData = {
       ...updates,
       weekDays: updates.weekDays !== undefined
         ? (updates.weekDays ? JSON.stringify(updates.weekDays) : null)
+        : undefined,
+      photoUrls: updates.photoUrls !== undefined
+        ? (updates.photoUrls ? JSON.stringify(updates.photoUrls) : null)
         : undefined,
     };
     // Удаляем undefined поля
@@ -211,6 +221,7 @@ export class DatabaseStorage implements IStorage {
       workerId: tasks.workerId,
       requiresPhoto: tasks.requiresPhoto,
       photoUrl: tasks.photoUrl,
+      photoUrls: tasks.photoUrls,
       examplePhotoUrl: tasks.examplePhotoUrl,
       isCompleted: tasks.isCompleted,
       weekDays: tasks.weekDays,
@@ -224,6 +235,7 @@ export class DatabaseStorage implements IStorage {
     return {
       ...task,
       weekDays: task.weekDays ? JSON.parse(task.weekDays) : null,
+      photoUrls: task.photoUrls ? JSON.parse(task.photoUrls) : [],
     } as Task;
   }
 

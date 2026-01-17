@@ -272,12 +272,11 @@ export async function registerRoutes(
     }
   });
 
-  // Загрузка фото для задачи
-  // Загрузка фото для задачи (оборачиваем multer, чтобы отдавать JSON даже при ошибках)
+  // Загрузка фото для задачи (поддержка до 10 фотографий)
   app.post("/api/tasks/:id/photo", requireAuth, (req, res, next) => {
     // Устанавливаем заголовок Content-Type для JSON ответов
     res.setHeader('Content-Type', 'application/json');
-    
+
     upload.single("photo")(req, res, async (err: any) => {
       try {
         if (err) {
@@ -303,16 +302,31 @@ export async function registerRoutes(
           return res.status(403).json({ message: "Вы не являетесь исполнителем этой задачи" });
         }
 
+        // Проверяем лимит фотографий (максимум 10)
+        const currentPhotos = (task as any).photoUrls || [];
+        if (currentPhotos.length >= 10) {
+          return res.status(400).json({ message: "Достигнут лимит фотографий (максимум 10)" });
+        }
+
         const photoUrl = `/uploads/${req.file.filename}`;
         console.log("Uploading photo for task:", taskId, "photoUrl:", photoUrl);
-        const updatedTask = await storage.updateTask(taskId, { photoUrl });
+
+        // Добавляем новое фото в массив
+        const newPhotoUrls = [...currentPhotos, photoUrl];
+        const updatedTask = await storage.updateTask(taskId, {
+          photoUrls: newPhotoUrls,
+          photoUrl: photoUrl // Для обратной совместимости, храним последнее фото
+        });
         console.log("Updated task:", updatedTask);
 
         if (!updatedTask) {
           return res.status(500).json({ message: "Ошибка обновления задачи" });
         }
 
-        return res.json({ photoUrl: updatedTask.photoUrl });
+        return res.json({
+          photoUrl: photoUrl,
+          photoUrls: (updatedTask as any).photoUrls || []
+        });
       } catch (uploadErr: any) {
         console.error("Error uploading photo:", uploadErr);
         return res.status(500).json({ message: "Ошибка загрузки фото", error: uploadErr.message });
@@ -394,11 +408,13 @@ export async function registerRoutes(
     }
   });
 
-  // Удаление фото задачи
+  // Удаление конкретного фото задачи по URL
   app.delete("/api/tasks/:id/photo", requireAuth, async (req, res) => {
     res.setHeader("Content-Type", "application/json");
     try {
       const taskId = Number(req.params.id);
+      const photoUrlToDelete = req.query.url as string; // URL фото для удаления
+
       const task = await storage.getTask(taskId);
       if (!task) {
         return res.status(404).json({ message: "Задача не найдена" });
@@ -411,28 +427,81 @@ export async function registerRoutes(
         return res.status(403).json({ message: "Нет прав для удаления фото" });
       }
 
-      if (!task.photoUrl) {
+      const currentPhotos: string[] = (task as any).photoUrls || [];
+
+      // Если передан конкретный URL, удаляем только его
+      if (photoUrlToDelete) {
+        if (!currentPhotos.includes(photoUrlToDelete)) {
+          return res.status(400).json({ message: "Фото не найдено" });
+        }
+
+        // Удаляем файл с диска
+        const { unlink } = await import("fs/promises");
+        const photoPath = path.join(process.cwd(), photoUrlToDelete);
+        try {
+          await unlink(photoPath);
+          console.log("Deleted photo file:", photoPath);
+        } catch (unlinkErr: any) {
+          console.error("Error deleting photo file:", unlinkErr);
+        }
+
+        // Обновляем массив фото
+        const newPhotoUrls = currentPhotos.filter(url => url !== photoUrlToDelete);
+        const lastPhotoUrl = newPhotoUrls.length > 0 ? newPhotoUrls[newPhotoUrls.length - 1] : null;
+
+        const updatedTask = await storage.updateTask(taskId, {
+          photoUrls: newPhotoUrls.length > 0 ? newPhotoUrls : null,
+          photoUrl: lastPhotoUrl
+        });
+
+        if (!updatedTask) {
+          return res.status(500).json({ message: "Ошибка обновления задачи" });
+        }
+
+        return res.json({
+          success: true,
+          photoUrls: (updatedTask as any).photoUrls || []
+        });
+      }
+
+      // Если URL не передан, удаляем все фото (старое поведение)
+      if (currentPhotos.length === 0 && !task.photoUrl) {
         return res.status(400).json({ message: "У задачи нет фото" });
       }
 
-      // Удаляем файл с диска
+      // Удаляем все файлы с диска
       const { unlink } = await import("fs/promises");
-      const photoPath = path.join(process.cwd(), task.photoUrl);
-      try {
-        await unlink(photoPath);
-        console.log("Deleted photo file:", photoPath);
-      } catch (unlinkErr: any) {
-        console.error("Error deleting photo file:", unlinkErr);
-        // Продолжаем даже если файл не удалился (возможно уже удален)
+      for (const photoUrl of currentPhotos) {
+        const photoPath = path.join(process.cwd(), photoUrl);
+        try {
+          await unlink(photoPath);
+          console.log("Deleted photo file:", photoPath);
+        } catch (unlinkErr: any) {
+          console.error("Error deleting photo file:", unlinkErr);
+        }
       }
 
-      // Обновляем задачу, убирая photoUrl
-      const updatedTask = await storage.updateTask(taskId, { photoUrl: null });
+      // Также удаляем старый photoUrl если он есть и не в массиве
+      if (task.photoUrl && !currentPhotos.includes(task.photoUrl)) {
+        const photoPath = path.join(process.cwd(), task.photoUrl);
+        try {
+          await unlink(photoPath);
+          console.log("Deleted legacy photo file:", photoPath);
+        } catch (unlinkErr: any) {
+          console.error("Error deleting legacy photo file:", unlinkErr);
+        }
+      }
+
+      // Обновляем задачу, убирая все фото
+      const updatedTask = await storage.updateTask(taskId, {
+        photoUrls: null,
+        photoUrl: null
+      });
       if (!updatedTask) {
         return res.status(500).json({ message: "Ошибка обновления задачи" });
       }
 
-      res.json({ success: true });
+      res.json({ success: true, photoUrls: [] });
     } catch (err: any) {
       console.error("Error deleting photo:", err);
       res.status(500).json({ message: "Ошибка удаления фото", error: err.message });
@@ -464,7 +533,9 @@ export async function registerRoutes(
       }
 
       // Если требуется фото, проверяем что оно загружено
-      if (task.requiresPhoto && !task.photoUrl) {
+      const taskPhotoUrls = (task as any).photoUrls || [];
+      const hasPhotos = taskPhotoUrls.length > 0 || task.photoUrl;
+      if (task.requiresPhoto && !hasPhotos) {
         return res.status(400).json({ message: "Необходимо загрузить фото перед завершением" });
       }
 
@@ -479,10 +550,10 @@ export async function registerRoutes(
         console.log(`Added ${task.price} to user ${task.workerId} balance for completing task ${taskId}`);
       }
 
-      // Отправляем email админу с прикрепленным фото (если есть)
+      // Отправляем email админу с прикрепленными фото (если есть)
       const worker = task.workerId ? await storage.getUserById(task.workerId) : null;
       const workerName = worker?.name || worker?.phone || "Неизвестный";
-      sendTaskCompletedEmail(task.title, workerName, task.photoUrl);
+      sendTaskCompletedEmail(task.title, workerName, taskPhotoUrls.length > 0 ? taskPhotoUrls : (task.photoUrl ? [task.photoUrl] : null));
 
       res.json(updatedTask);
     } catch (err: any) {

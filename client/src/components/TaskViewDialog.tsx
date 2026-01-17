@@ -35,10 +35,24 @@ export function TaskViewDialog({
   const [preview, setPreview] = useState<string | null>(null);
   const [currentTask, setCurrentTask] = useState<Task | null>(task);
   const [isPhotoFullscreen, setIsPhotoFullscreen] = useState(false);
+  const [fullscreenPhotoIndex, setFullscreenPhotoIndex] = useState(0);
   const [isExamplePhotoFullscreen, setIsExamplePhotoFullscreen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
+
+  // Получаем массив фотографий из задачи
+  const getPhotoUrls = (t: Task | null): string[] => {
+    if (!t) return [];
+    const urls = (t as any).photoUrls;
+    if (Array.isArray(urls) && urls.length > 0) return urls;
+    // Обратная совместимость со старым полем photoUrl
+    if (t.photoUrl) return [t.photoUrl];
+    return [];
+  };
+
+  const photoUrls = getPhotoUrls(currentTask);
+  const canAddMorePhotos = photoUrls.length < 10;
 
   React.useEffect(() => {
     if (task) {
@@ -88,9 +102,13 @@ export function TaskViewDialog({
 
       return response.json();
     },
-    onSuccess: async (data: { photoUrl: string }) => {
+    onSuccess: async (data: { photoUrl: string; photoUrls: string[] }) => {
       if (currentTask) {
-        const updatedTask = { ...currentTask, photoUrl: data.photoUrl };
+        const updatedTask = {
+          ...currentTask,
+          photoUrl: data.photoUrl,
+          photoUrls: data.photoUrls,
+        } as Task;
         setCurrentTask(updatedTask);
         if (onTaskUpdate) {
           onTaskUpdate(updatedTask);
@@ -98,13 +116,9 @@ export function TaskViewDialog({
       }
       await queryClient.invalidateQueries({ queryKey: ["tasks"] });
       await queryClient.invalidateQueries({ queryKey: [api.tasks.list.path] });
-      if (currentTask) {
-        const updatedTask = { ...currentTask, photoUrl: data.photoUrl };
-        queryClient.setQueryData([api.tasks.get.path, currentTask.id], updatedTask);
-      }
       toast({
         title: "Успешно",
-        description: "Фотография загружена",
+        description: `Фотография загружена (${data.photoUrls.length}/10)`,
       });
       setSelectedFile(null);
       setPreview(null);
@@ -122,10 +136,10 @@ export function TaskViewDialog({
   });
 
   const deletePhotoMutation = useMutation({
-    mutationFn: async () => {
+    mutationFn: async (photoUrl: string) => {
       if (!currentTask) throw new Error("Задача не выбрана");
 
-      const response = await fetch(`/api/tasks/${currentTask.id}/photo`, {
+      const response = await fetch(`/api/tasks/${currentTask.id}/photo?url=${encodeURIComponent(photoUrl)}`, {
         method: "DELETE",
         credentials: "include",
         headers: {
@@ -150,9 +164,14 @@ export function TaskViewDialog({
 
       return data;
     },
-    onSuccess: async () => {
+    onSuccess: async (data: { success: boolean; photoUrls: string[] }) => {
       if (currentTask) {
-        const updatedTask = { ...currentTask, photoUrl: null };
+        const lastPhotoUrl = data.photoUrls.length > 0 ? data.photoUrls[data.photoUrls.length - 1] : null;
+        const updatedTask = {
+          ...currentTask,
+          photoUrl: lastPhotoUrl,
+          photoUrls: data.photoUrls,
+        } as Task;
         setCurrentTask(updatedTask);
         if (onTaskUpdate) {
           onTaskUpdate(updatedTask);
@@ -174,9 +193,9 @@ export function TaskViewDialog({
     },
   });
 
-  const handleDeletePhoto = () => {
+  const handleDeletePhoto = (photoUrl: string) => {
     if (confirm("Удалить фотографию?")) {
-      deletePhotoMutation.mutate();
+      deletePhotoMutation.mutate(photoUrl);
     }
   };
 
@@ -210,7 +229,7 @@ export function TaskViewDialog({
   };
 
   const handleComplete = () => {
-    if (currentTask?.requiresPhoto && !currentTask.photoUrl) {
+    if (currentTask?.requiresPhoto && photoUrls.length === 0) {
       toast({
         title: "Ошибка",
         description: "Сначала загрузите фотографию",
@@ -269,32 +288,42 @@ export function TaskViewDialog({
               <div className="flex items-center gap-2">
                 <Camera className="w-4 h-4 text-primary" />
                 <span className="text-sm font-semibold text-foreground">Фото результата</span>
-                {!currentTask.photoUrl && (
+                {photoUrls.length === 0 && (
                   <span className="text-xs text-orange-600 font-medium bg-orange-100 px-2 py-0.5 rounded-full">обязательно</span>
+                )}
+                {photoUrls.length > 0 && (
+                  <span className="text-xs text-green-600 font-medium bg-green-100 px-2 py-0.5 rounded-full">{photoUrls.length}/10</span>
                 )}
               </div>
 
-              {currentTask.photoUrl ? (
-                <div className="relative">
-                  <img
-                    src={currentTask.photoUrl}
-                    alt="Фото результатов"
-                    className="w-full h-40 object-cover rounded-xl border-2 border-green-500 cursor-pointer hover:opacity-90 transition-opacity"
-                    onClick={() => setIsPhotoFullscreen(true)}
-                  />
-                  <button
-                    onClick={handleDeletePhoto}
-                    disabled={deletePhotoMutation.isPending}
-                    className="absolute top-2 right-2 p-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors shadow-md"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
-                  <div className="absolute bottom-2 left-2 bg-green-500 text-white px-2.5 py-1 rounded-lg flex items-center gap-1 text-xs font-medium shadow-md">
-                    <CheckCircle2 className="w-3.5 h-3.5" />
-                    Загружено
-                  </div>
+              {/* Uploaded photos grid */}
+              {photoUrls.length > 0 && (
+                <div className="grid grid-cols-3 gap-2">
+                  {photoUrls.map((url, index) => (
+                    <div key={url} className="relative aspect-square">
+                      <img
+                        src={url}
+                        alt={`Фото ${index + 1}`}
+                        className="w-full h-full object-cover rounded-lg border-2 border-green-500 cursor-pointer hover:opacity-90 transition-opacity"
+                        onClick={() => {
+                          setFullscreenPhotoIndex(index);
+                          setIsPhotoFullscreen(true);
+                        }}
+                      />
+                      <button
+                        onClick={() => handleDeletePhoto(url)}
+                        disabled={deletePhotoMutation.isPending}
+                        className="absolute top-1 right-1 p-1.5 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors shadow-md"
+                      >
+                        <Trash2 className="w-3 h-3" />
+                      </button>
+                    </div>
+                  ))}
                 </div>
-              ) : (
+              )}
+
+              {/* Add more photos button */}
+              {canAddMorePhotos && (
                 <div>
                   <input
                     ref={fileInputRef}
@@ -307,7 +336,7 @@ export function TaskViewDialog({
                   />
                   <label
                     htmlFor="photo-upload"
-                    className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-primary/40 bg-primary/5 rounded-xl cursor-pointer hover:border-primary hover:bg-primary/10 transition-all active:scale-[0.99]"
+                    className={`flex flex-col items-center justify-center w-full ${photoUrls.length > 0 ? 'h-20' : 'h-32'} border-2 border-dashed border-primary/40 bg-primary/5 rounded-xl cursor-pointer hover:border-primary hover:bg-primary/10 transition-all active:scale-[0.99]`}
                   >
                     {preview ? (
                       <div className="relative w-full h-full">
@@ -324,11 +353,15 @@ export function TaskViewDialog({
                       </div>
                     ) : (
                       <>
-                        <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mb-2">
-                          <Camera className="w-6 h-6 text-primary" />
+                        <div className={`${photoUrls.length > 0 ? 'w-8 h-8' : 'w-12 h-12'} rounded-full bg-primary/10 flex items-center justify-center mb-1`}>
+                          <Camera className={`${photoUrls.length > 0 ? 'w-4 h-4' : 'w-6 h-6'} text-primary`} />
                         </div>
-                        <p className="text-sm font-semibold text-foreground">Сделать фото</p>
-                        <p className="text-xs text-muted-foreground">или выбрать из галереи</p>
+                        <p className="text-sm font-semibold text-foreground">
+                          {photoUrls.length > 0 ? 'Добавить ещё фото' : 'Сделать фото'}
+                        </p>
+                        {photoUrls.length === 0 && (
+                          <p className="text-xs text-muted-foreground">или выбрать из галереи</p>
+                        )}
                       </>
                     )}
                   </label>
@@ -351,11 +384,11 @@ export function TaskViewDialog({
               ) : (
                 <button
                   onClick={handleComplete}
-                  disabled={currentTask.requiresPhoto && !currentTask.photoUrl}
+                  disabled={currentTask.requiresPhoto && photoUrls.length === 0}
                   className="flex items-center justify-center gap-2 w-full h-12 bg-green-500 hover:bg-green-600 text-white rounded-xl font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-md shadow-green-500/20"
                 >
                   <Check className="w-5 h-5" />
-                  {currentTask.requiresPhoto && !currentTask.photoUrl
+                  {currentTask.requiresPhoto && photoUrls.length === 0
                     ? "Сначала загрузите фото"
                     : "Завершить задачу"
                   }
@@ -372,21 +405,57 @@ export function TaskViewDialog({
         </div>
       </DialogContent>
 
-      {/* Fullscreen photo modal */}
-      {isPhotoFullscreen && currentTask?.photoUrl && (
+      {/* Fullscreen photo modal with navigation */}
+      {isPhotoFullscreen && photoUrls.length > 0 && (
         <div
           className="fixed inset-0 z-[100] bg-black/95 flex items-center justify-center cursor-pointer"
           onClick={() => setIsPhotoFullscreen(false)}
         >
           <button
-            className="absolute top-4 right-4 p-3 bg-white/10 hover:bg-white/20 rounded-full transition-colors"
+            className="absolute top-4 right-4 p-3 bg-white/10 hover:bg-white/20 rounded-full transition-colors z-10"
             onClick={() => setIsPhotoFullscreen(false)}
           >
             <X className="w-6 h-6 text-white" />
           </button>
+
+          {/* Navigation arrows */}
+          {photoUrls.length > 1 && (
+            <>
+              <button
+                className="absolute left-4 top-1/2 -translate-y-1/2 p-3 bg-white/10 hover:bg-white/20 rounded-full transition-colors"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setFullscreenPhotoIndex(prev => prev > 0 ? prev - 1 : photoUrls.length - 1);
+                }}
+              >
+                <svg className="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                </svg>
+              </button>
+              <button
+                className="absolute right-4 top-1/2 -translate-y-1/2 p-3 bg-white/10 hover:bg-white/20 rounded-full transition-colors"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setFullscreenPhotoIndex(prev => prev < photoUrls.length - 1 ? prev + 1 : 0);
+                }}
+              >
+                <svg className="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                </svg>
+              </button>
+            </>
+          )}
+
+          {/* Photo counter */}
+          {photoUrls.length > 1 && (
+            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-black/50 text-white px-3 py-1 rounded-full text-sm">
+              {fullscreenPhotoIndex + 1} / {photoUrls.length}
+            </div>
+          )}
+
           <img
-            src={currentTask.photoUrl}
-            alt="Фото результатов"
+            src={photoUrls[fullscreenPhotoIndex]}
+            alt={`Фото ${fullscreenPhotoIndex + 1}`}
             className="max-w-[95vw] max-h-[90vh] object-contain rounded-2xl"
             onClick={(e) => e.stopPropagation()}
           />

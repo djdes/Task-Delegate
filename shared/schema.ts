@@ -21,7 +21,8 @@ export const tasks = mysqlTable("tasks", {
   title: varchar("title", { length: 255 }).notNull(),
   workerId: int("worker_id"),
   requiresPhoto: boolean("requires_photo").notNull().default(false),
-  photoUrl: varchar("photo_url", { length: 500 }),
+  photoUrl: varchar("photo_url", { length: 500 }), // Устаревшее, для совместимости
+  photoUrls: text("photo_urls"), // JSON массив URL фотографий (до 10 шт)
   examplePhotoUrl: varchar("example_photo_url", { length: 500 }), // Пример фото для задачи
   isCompleted: boolean("is_completed").notNull().default(false),
   weekDays: varchar("week_days", { length: 20 }), // JSON массив дней: [0,1,2,3,4,5,6] где 0=Вс, 1=Пн, ..., 6=Сб
@@ -76,7 +77,8 @@ export const insertTaskSchema = createInsertSchema(tasks).pick({
   workerId: true,
   requiresPhoto: true,
 }).extend({
-  photoUrl: z.string().nullable().optional(),
+  photoUrl: z.string().nullable().optional(), // Устаревшее, для совместимости
+  photoUrls: z.array(z.string()).nullable().optional(), // Массив URL фотографий (до 10 шт)
   examplePhotoUrl: z.string().nullable().optional(), // URL примера фото
   isCompleted: z.boolean().optional().default(false),
   weekDays: z.array(z.number().min(0).max(6)).nullable().optional(), // массив дней недели [0-6]
@@ -93,5 +95,9 @@ export type UpdateUser = z.infer<typeof updateUserSchema>;
 export type LoginInput = z.infer<typeof loginSchema>;
 export type Worker = typeof workers.$inferSelect;
 export type InsertWorker = z.infer<typeof insertWorkerSchema>;
-export type Task = typeof tasks.$inferSelect;
+// Переопределяем Task чтобы weekDays и photoUrls были массивами (парсятся из JSON в storage.ts)
+export type Task = Omit<typeof tasks.$inferSelect, 'weekDays' | 'photoUrls'> & {
+  weekDays: number[] | null;
+  photoUrls: string[];
+};
 export type InsertTask = z.infer<typeof insertTaskSchema>;

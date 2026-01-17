@@ -6,6 +6,7 @@ import { useTasks, useDeleteTask, useCompleteTask, useUncompleteTask } from "@/h
 import { useAuth } from "@/contexts/AuthContext";
 import { TaskViewDialog } from "@/components/TaskViewDialog";
 import { DuplicateTaskDialog } from "@/components/DuplicateTaskDialog";
+import type { Task } from "@shared/schema";
 import { Button } from "@/components/ui/button";
 import {
   CheckCircle2,
@@ -59,11 +60,11 @@ export default function Dashboard() {
   const { data: tasks = [], isLoading: loadingTasks } = useTasks();
   const { toast } = useToast();
 
-  const [selectedTask, setSelectedTask] = useState<typeof tasks[0] | null>(null);
+  const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [isTaskDialogOpen, setIsTaskDialogOpen] = useState(false);
   const [filterByUserId, setFilterByUserId] = useState<string>("all");
   const [filterByCategory, setFilterByCategory] = useState<string>("all");
-  const [duplicateTask, setDuplicateTask] = useState<typeof tasks[0] | null>(null);
+  const [duplicateTask, setDuplicateTask] = useState<Task | null>(null);
   const [isDuplicateDialogOpen, setIsDuplicateDialogOpen] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);

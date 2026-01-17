@@ -13,7 +13,7 @@ const transporter = nodemailer.createTransport({
 
 const ADMIN_EMAIL = "bugdenes@gmail.com";
 
-export async function sendTaskCompletedEmail(taskTitle: string, workerName: string, photoUrl?: string | null) {
+export async function sendTaskCompletedEmail(taskTitle: string, workerName: string, photoUrls?: string[] | null) {
   try {
     const mailOptions: nodemailer.SendMailOptions = {
       from: '"Task-Delegate" <admin@yesbeat.ru>',
@@ -22,19 +22,17 @@ export async function sendTaskCompletedEmail(taskTitle: string, workerName: stri
       text: "",
     };
 
-    // Если есть фото, прикрепляем его к письму
-    if (photoUrl) {
-      const photoPath = path.join(process.cwd(), photoUrl);
-      mailOptions.attachments = [
-        {
-          filename: path.basename(photoUrl),
-          path: photoPath,
-        },
-      ];
+    // Если есть фото, прикрепляем их к письму
+    if (photoUrls && photoUrls.length > 0) {
+      mailOptions.attachments = photoUrls.map((photoUrl, index) => ({
+        filename: `photo-${index + 1}${path.extname(photoUrl) || '.jpg'}`,
+        path: path.join(process.cwd(), photoUrl),
+      }));
     }
 
     await transporter.sendMail(mailOptions);
-    console.log(`Email sent: ${taskTitle} - ${workerName}${photoUrl ? ' (with photo)' : ''}`);
+    const photoCount = photoUrls?.length || 0;
+    console.log(`Email sent: ${taskTitle} - ${workerName}${photoCount > 0 ? ` (with ${photoCount} photo${photoCount > 1 ? 's' : ''})` : ''}`);
   } catch (error) {
     console.error("Error sending email:", error);
   }

@@ -1,15 +1,16 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { api, buildUrl, type InsertTask } from "@shared/routes";
+import { api, buildUrl } from "@shared/routes";
+import type { InsertTask, Task } from "@shared/schema";
 import { useToast } from "@/hooks/use-toast";
-import { z } from "zod";
 
 export function useTasks() {
-  return useQuery({
+  return useQuery<Task[]>({
     queryKey: [api.tasks.list.path],
     queryFn: async () => {
       const res = await fetch(api.tasks.list.path, { credentials: "include" });
       if (!res.ok) throw new Error("Failed to fetch tasks");
-      return api.tasks.list.responses[200].parse(await res.json());
+      // Не используем parse чтобы сохранить weekDays и photoUrls как массивы
+      return await res.json();
     },
   });
 }
