@@ -100,8 +100,9 @@
 @layer components {
   /* ===== HEADER ===== */
   .app-header {
-    @apply fixed top-0 left-0 right-0 z-50 bg-primary text-white shadow-lg;
+    @apply bg-primary text-white shadow-lg;
     height: 56px;
+    padding-top: env(safe-area-inset-top, 0);
   }
 
   .app-header-content {
@@ -110,6 +111,7 @@
 
   @media (min-width: 1024px) {
     .app-header {
+      @apply fixed top-0 left-0 right-0 z-50;
       height: 64px;
       @apply px-6;
     }
@@ -122,7 +124,6 @@
   /* ===== MAIN LAYOUT ===== */
   .app-layout {
     @apply min-h-screen bg-background;
-    padding-top: 64px;
     padding-bottom: 72px;
   }
 
