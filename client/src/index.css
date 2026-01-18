@@ -101,24 +101,20 @@
   /* ===== HEADER ===== */
   .app-header {
     @apply bg-primary text-white shadow-lg;
-    min-height: 56px;
-    padding-top: env(safe-area-inset-top, 0);
+    height: 56px;
   }
 
   .app-header-content {
-    @apply flex items-center justify-between px-4 max-w-6xl mx-auto;
-    height: 56px;
+    @apply flex items-center justify-between px-4 max-w-6xl mx-auto h-full;
   }
 
   @media (min-width: 1024px) {
     .app-header {
-      @apply fixed top-0 left-0 right-0 z-50;
-      min-height: 64px;
-      @apply px-6;
+      @apply fixed top-0 left-0 right-0 z-50 px-6;
+      height: 64px;
     }
 
     .app-header-content {
-      height: 64px;
       @apply px-0;
     }
   }
