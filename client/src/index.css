@@ -474,6 +474,23 @@
     @apply text-sm font-bold text-white;
   }
 
+  /* ===== BONUS INFO DIALOG ===== */
+  .bonus-info-dialog {
+    @apply rounded-3xl border-0 p-6 max-w-sm mx-auto;
+    animation: dialog-appear 0.3s ease-out;
+  }
+
+  @keyframes dialog-appear {
+    from {
+      opacity: 0;
+      transform: scale(0.95) translateY(10px);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1) translateY(0);
+    }
+  }
+
   /* ===== LEGACY SUPPORT ===== */
   .ozon-card {
     @apply bg-card rounded-2xl shadow-sm;

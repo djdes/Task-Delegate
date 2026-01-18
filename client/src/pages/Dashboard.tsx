@@ -36,6 +36,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Gift, CalendarCheck, MessageCircle } from "lucide-react";
 
 const WEEK_DAY_SHORT_NAMES: { [key: number]: string } = {
   0: "Вс",
@@ -62,6 +69,7 @@ export default function Dashboard() {
   const [isDuplicateDialogOpen, setIsDuplicateDialogOpen] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isBonusInfoOpen, setIsBonusInfoOpen] = useState(false);
 
   const handleRefresh = async () => {
     setIsRefreshing(true);
@@ -262,7 +270,7 @@ export default function Dashboard() {
           {!user.isAdmin && (user as any).bonusBalance > 0 && (
             <div
               className="bonus-badge cursor-pointer"
-              onClick={() => alert("Дополнительная премия выплачивается 2 раза в месяц, 1 и 16 числа. По всем вопросам обращайтесь к руководителю/заведующему.")}
+              onClick={() => setIsBonusInfoOpen(true)}
             >
               <Coins className="w-5 h-5 text-yellow-300" />
               <span className="bonus-badge-text">{(user as any).bonusBalance} ₽</span>
@@ -569,6 +577,40 @@ export default function Dashboard() {
           onOpenChange={setIsDuplicateDialogOpen}
         />
       )}
+
+      {/* Bonus Info Dialog */}
+      <Dialog open={isBonusInfoOpen} onOpenChange={setIsBonusInfoOpen}>
+        <DialogContent className="bonus-info-dialog">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-3 text-xl">
+              <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-yellow-400 to-orange-500 flex items-center justify-center shadow-lg">
+                <Gift className="w-6 h-6 text-white" />
+              </div>
+              Дополнительная премия
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 pt-2">
+            <div className="flex items-start gap-3 p-4 bg-gradient-to-r from-primary/5 to-primary/10 rounded-2xl">
+              <CalendarCheck className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />
+              <p className="text-sm text-foreground/80">
+                Премия выплачивается <strong className="text-foreground">2 раза в месяц</strong> — 1 и 16 числа каждого месяца.
+              </p>
+            </div>
+            <div className="flex items-start gap-3 p-4 bg-gradient-to-r from-green-500/5 to-green-500/10 rounded-2xl">
+              <MessageCircle className="w-5 h-5 text-green-600 mt-0.5 flex-shrink-0" />
+              <p className="text-sm text-foreground/80">
+                По всем вопросам обращайтесь к <strong className="text-foreground">руководителю или заведующему</strong>.
+              </p>
+            </div>
+            <div className="pt-2 flex justify-center">
+              <div className="inline-flex items-center gap-2 px-5 py-3 bg-gradient-to-r from-yellow-400/20 to-orange-500/20 rounded-2xl border border-yellow-400/30">
+                <Coins className="w-6 h-6 text-yellow-500" />
+                <span className="text-2xl font-bold text-foreground">{(user as any)?.bonusBalance || 0} ₽</span>
+              </div>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
