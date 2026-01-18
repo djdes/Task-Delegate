@@ -84,23 +84,6 @@ export default function Dashboard() {
       .filter((c): c is string => c !== null && c !== undefined && c.trim() !== "")
   )).sort();
 
-  // Scroll to top on mount - multiple attempts to ensure it works
-  useEffect(() => {
-    // Immediate scroll
-    window.scrollTo(0, 0);
-    document.documentElement.scrollTop = 0;
-    document.body.scrollTop = 0;
-
-    // Delayed scroll to override browser's scroll restoration
-    const timer = setTimeout(() => {
-      window.scrollTo(0, 0);
-      document.documentElement.scrollTop = 0;
-      document.body.scrollTop = 0;
-    }, 100);
-
-    return () => clearTimeout(timer);
-  }, []);
-
   useEffect(() => {
     if (selectedTask) {
       const updated = tasks.find(t => t.id === selectedTask.id);
