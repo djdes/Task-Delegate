@@ -219,14 +219,14 @@ export default function Dashboard() {
   return (
     <div className="app-layout">
       {/* Header */}
-      <header className="app-header">
+      <header className="app-header relative">
         <div className="app-header-content">
           <div className="flex items-center gap-3">
-            {/* Menu button for mobile (non-admin) */}
+            {/* Menu button for non-admin */}
             {!user.isAdmin && (
               <button
                 onClick={() => setIsMenuOpen(!isMenuOpen)}
-                className="lg:hidden header-button"
+                className="header-button"
                 aria-label="Меню"
               >
                 {isMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
@@ -264,31 +264,31 @@ export default function Dashboard() {
             </div>
           )}
         </div>
-      </header>
 
-      {/* Mobile dropdown menu for non-admin */}
-      {!user.isAdmin && isMenuOpen && (
-        <div className="dropdown-menu animate-fade-in">
-          <button
-            className="dropdown-item w-full"
-            onClick={() => setIsMenuOpen(false)}
-          >
-            <Home className="w-5 h-5 text-primary" />
-            <span className="font-medium">Главная</span>
-          </button>
-          <div className="dropdown-divider" />
-          <button
-            className="dropdown-item danger w-full"
-            onClick={() => {
-              setIsMenuOpen(false);
-              logout();
-            }}
-          >
-            <LogOut className="w-5 h-5" />
-            <span className="font-medium">Выход</span>
-          </button>
-        </div>
-      )}
+        {/* Dropdown menu for non-admin */}
+        {!user.isAdmin && isMenuOpen && (
+          <div className="dropdown-menu animate-fade-in">
+            <button
+              className="dropdown-item w-full"
+              onClick={() => setIsMenuOpen(false)}
+            >
+              <Home className="w-5 h-5 text-primary" />
+              <span className="font-medium">Главная</span>
+            </button>
+            <div className="dropdown-divider" />
+            <button
+              className="dropdown-item danger w-full"
+              onClick={() => {
+                setIsMenuOpen(false);
+                logout();
+              }}
+            >
+              <LogOut className="w-5 h-5" />
+              <span className="font-medium">Выход</span>
+            </button>
+          </div>
+        )}
+      </header>
 
       {/* Main Content */}
       <main className="app-content">
