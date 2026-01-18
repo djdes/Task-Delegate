@@ -61,6 +61,7 @@ export default function Login() {
     setIsLoading(true);
     try {
       await login(values.phone);
+      window.scrollTo(0, 0);
       setLocation("/dashboard");
     } catch (error: any) {
       toast({

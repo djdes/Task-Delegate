@@ -84,9 +84,11 @@ export default function Dashboard() {
       .filter((c): c is string => c !== null && c !== undefined && c.trim() !== "")
   )).sort();
 
-  // Scroll to top on mount
+  // Scroll to top on mount (use requestAnimationFrame for reliable scroll after render)
   useEffect(() => {
-    window.scrollTo(0, 0);
+    requestAnimationFrame(() => {
+      window.scrollTo(0, 0);
+    });
   }, []);
 
   useEffect(() => {
