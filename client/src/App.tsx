@@ -1,5 +1,5 @@
 import { Switch, Route, useLocation } from "wouter";
-import { useEffect } from "react";
+import { useEffect, useLayoutEffect } from "react";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
@@ -14,15 +14,28 @@ import EditWorker from "@/pages/EditWorker";
 import AdminUsers from "@/pages/AdminUsers";
 import NotFound from "@/pages/not-found";
 
+// Disable browser's automatic scroll restoration
+if ('scrollRestoration' in history) {
+  history.scrollRestoration = 'manual';
+}
+
 // Component to reset scroll on route change
 function ScrollToTop() {
   const [location] = useLocation();
 
-  useEffect(() => {
-    // Reset scroll on every route change
+  // useLayoutEffect runs synchronously before browser paint
+  useLayoutEffect(() => {
+    // Immediate scroll reset
     window.scrollTo(0, 0);
     document.documentElement.scrollTop = 0;
     document.body.scrollTop = 0;
+
+    // Also schedule for next frame to ensure it happens after React render
+    requestAnimationFrame(() => {
+      window.scrollTo(0, 0);
+      document.documentElement.scrollTop = 0;
+      document.body.scrollTop = 0;
+    });
   }, [location]);
 
   return null;

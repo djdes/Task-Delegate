@@ -85,7 +85,14 @@
     box-sizing: border-box;
   }
 
-  html, body, #root {
+  html {
+    margin: 0;
+    padding: 0;
+    scroll-behavior: auto;
+    overflow-x: hidden;
+  }
+
+  body, #root {
     margin: 0;
     padding: 0;
   }

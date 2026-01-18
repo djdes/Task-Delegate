@@ -30,6 +30,10 @@ export default function Login() {
 
   useEffect(() => {
     if (!authLoading && user) {
+      // Reset scroll before navigation
+      window.scrollTo(0, 0);
+      document.documentElement.scrollTop = 0;
+      document.body.scrollTop = 0;
       setLocation("/dashboard");
     }
   }, [user, authLoading, setLocation]);
@@ -56,6 +60,10 @@ export default function Login() {
     setIsLoading(true);
     try {
       await login(values.phone);
+      // Reset scroll before navigation
+      window.scrollTo(0, 0);
+      document.documentElement.scrollTop = 0;
+      document.body.scrollTop = 0;
       setLocation("/dashboard");
     } catch (error: any) {
       toast({
