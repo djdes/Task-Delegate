@@ -104,30 +104,6 @@
 }
 
 @layer components {
-  /* ===== LOGIN PAGE ===== */
-  .login-page {
-    @apply min-h-screen flex flex-col items-center justify-center px-6 py-8;
-    background: linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(220 100% 45%) 100%);
-    overflow: hidden;
-  }
-
-  .login-header {
-    @apply flex flex-col items-center gap-4 mb-8;
-  }
-
-  .login-icon {
-    @apply w-20 h-20 rounded-2xl bg-white/20 backdrop-blur-sm border border-white/30
-           flex items-center justify-center shadow-xl;
-  }
-
-  .login-title {
-    @apply text-2xl font-bold text-white text-center;
-  }
-
-  .login-form-card {
-    @apply w-full max-w-sm bg-white rounded-3xl p-6 shadow-2xl;
-  }
-
   /* ===== HEADER ===== */
   .app-header {
     @apply bg-primary text-white shadow-lg;
