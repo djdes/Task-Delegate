@@ -229,7 +229,7 @@ export default function Dashboard() {
       {/* Header */}
       <header className="app-header relative">
         <div className="app-header-content">
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
             {/* Menu button for non-admin */}
             {!user.isAdmin && (
               <button
@@ -237,7 +237,7 @@ export default function Dashboard() {
                 className="header-button"
                 aria-label="Меню"
               >
-                {isMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+                {isMenuOpen ? <X /> : <Menu />}
               </button>
             )}
 
@@ -248,11 +248,11 @@ export default function Dashboard() {
               className="header-button"
               aria-label="Обновить"
             >
-              <RefreshCw className={`w-5 h-5 ${isRefreshing ? 'animate-spin' : ''}`} />
+              <RefreshCw className={isRefreshing ? 'animate-spin' : ''} />
             </button>
 
             {/* Title */}
-            <div className="min-w-0">
+            <div className="min-w-0 ml-1">
               <h1 className="header-title">Задачи</h1>
               <p className="header-subtitle truncate">
                 {user.name || user.phone}
@@ -267,7 +267,7 @@ export default function Dashboard() {
               className="bonus-badge cursor-pointer"
               onClick={() => setIsBonusInfoOpen(true)}
             >
-              <Coins className="w-5 h-5 text-yellow-300" />
+              <Coins className="text-yellow-300" />
               <span className="bonus-badge-text">{(user as any).bonusBalance} ₽</span>
             </div>
           )}
@@ -280,7 +280,7 @@ export default function Dashboard() {
               className="dropdown-item w-full"
               onClick={() => setIsMenuOpen(false)}
             >
-              <Home className="w-5 h-5 text-primary" />
+              <Home className="text-primary" />
               <span className="font-medium">Главная</span>
             </button>
             <div className="dropdown-divider" />
@@ -291,7 +291,7 @@ export default function Dashboard() {
                 logout();
               }}
             >
-              <LogOut className="w-5 h-5" />
+              <LogOut />
               <span className="font-medium">Выход</span>
             </button>
           </div>
@@ -321,8 +321,8 @@ export default function Dashboard() {
           <div className="filters-bar">
             {categories.length > 0 && (
               <Select value={filterByCategory} onValueChange={setFilterByCategory}>
-                <SelectTrigger className="h-10 w-auto min-w-[140px] rounded-xl text-sm font-medium bg-white border-gray-200">
-                  <Tag className="w-4 h-4 mr-1.5 text-gray-400" />
+                <SelectTrigger className="h-8 w-auto min-w-[120px] rounded-lg text-xs font-medium bg-white border-gray-200">
+                  <Tag className="w-3 h-3 mr-1 text-gray-400" />
                   <SelectValue placeholder="Категория" />
                 </SelectTrigger>
                 <SelectContent>
@@ -338,8 +338,8 @@ export default function Dashboard() {
             )}
 
             <Select value={filterByUserId} onValueChange={setFilterByUserId}>
-              <SelectTrigger className="h-10 w-auto min-w-[150px] rounded-xl text-sm font-medium bg-white border-gray-200">
-                <User className="w-4 h-4 mr-1.5 text-gray-400" />
+              <SelectTrigger className="h-8 w-auto min-w-[130px] rounded-lg text-xs font-medium bg-white border-gray-200">
+                <User className="w-3 h-3 mr-1 text-gray-400" />
                 <SelectValue placeholder="Исполнитель" />
               </SelectTrigger>
               <SelectContent>
@@ -359,7 +359,7 @@ export default function Dashboard() {
         {filteredTasks.length === 0 ? (
           <div className="empty-state">
             <div className="empty-state-icon">
-              <Inbox className="w-12 h-12 text-gray-400" />
+              <Inbox className="text-gray-400" />
             </div>
             <h3 className="empty-state-title">
               {user?.isAdmin ? "Нет задач" : "Задач на сегодня нет"}
@@ -374,7 +374,7 @@ export default function Dashboard() {
                 onClick={() => setLocation("/tasks/new")}
                 className="empty-state-button"
               >
-                <Plus className="w-5 h-5" />
+                <Plus className="w-4 h-4" />
                 Создать задачу
               </button>
             )}
@@ -395,13 +395,13 @@ export default function Dashboard() {
                   className={`task-card ${isCompleted ? 'completed' : ''}`}
                   onClick={() => handleTaskClick(task)}
                 >
-                  <div className="flex items-start gap-3">
+                  <div className="flex items-start gap-2">
                     {/* Checkbox */}
                     <button
                       onClick={(e) => toggleTaskComplete(task.id, e)}
                       className={`task-checkbox ${isCompleted ? 'checked' : ''}`}
                     >
-                      {isCompleted && <Check className="w-4 h-4 text-white" />}
+                      {isCompleted && <Check className="w-3 h-3 text-white" />}
                     </button>
 
                     {/* Content */}
@@ -423,7 +423,7 @@ export default function Dashboard() {
                         {/* Photo required */}
                         {requiresPhoto && !isCompleted && (
                           <div className="task-badge photo">
-                            <Camera className="w-3.5 h-3.5" />
+                            <Camera className="w-3 h-3" />
                             <span>Фото</span>
                           </div>
                         )}
@@ -431,7 +431,7 @@ export default function Dashboard() {
                         {/* Price */}
                         {hasPrice && (
                           <div className="task-badge price">
-                            <Coins className="w-3.5 h-3.5" />
+                            <Coins className="w-3 h-3" />
                             <span>+{(task as any).price} ₽</span>
                           </div>
                         )}
@@ -439,7 +439,7 @@ export default function Dashboard() {
                         {/* Category */}
                         {hasCategory && (
                           <div className="task-badge category">
-                            <Tag className="w-3.5 h-3.5" />
+                            <Tag className="w-3 h-3" />
                             <span>{(task as any).category}</span>
                           </div>
                         )}
@@ -447,7 +447,7 @@ export default function Dashboard() {
                         {/* Schedule - only for admin */}
                         {user?.isAdmin && weekDays && weekDays.length > 0 && (
                           <div className="task-badge schedule">
-                            <Calendar className="w-3.5 h-3.5" />
+                            <Calendar className="w-3 h-3" />
                             <span>
                               {(weekDays as number[])
                                 .sort((a, b) => (a === 0 ? 7 : a) - (b === 0 ? 7 : b))
@@ -459,7 +459,7 @@ export default function Dashboard() {
 
                         {user?.isAdmin && monthDay && (
                           <div className="task-badge schedule">
-                            <CalendarDays className="w-3.5 h-3.5" />
+                            <CalendarDays className="w-3 h-3" />
                             <span>{monthDay} число</span>
                           </div>
                         )}
@@ -477,7 +477,7 @@ export default function Dashboard() {
                               setLocation(`/tasks/${task.id}/edit`);
                             }}
                           >
-                            <Edit2 className="w-4 h-4" />
+                            <Edit2 className="w-3.5 h-3.5" />
                           </button>
                           <button
                             className="task-action-btn"
@@ -487,7 +487,7 @@ export default function Dashboard() {
                               setIsDuplicateDialogOpen(true);
                             }}
                           >
-                            <Copy className="w-4 h-4" />
+                            <Copy className="w-3.5 h-3.5" />
                           </button>
                           <button
                             className="task-action-btn delete"
@@ -498,12 +498,12 @@ export default function Dashboard() {
                               }
                             }}
                           >
-                            <Trash2 className="w-4 h-4" />
+                            <Trash2 className="w-3.5 h-3.5" />
                           </button>
                         </div>
                       ) : (
                         <div className="task-arrow">
-                          <ChevronRight className="w-5 h-5" />
+                          <ChevronRight className="w-4 h-4" />
                         </div>
                       )}
                     </div>
@@ -521,7 +521,7 @@ export default function Dashboard() {
           onClick={() => setLocation("/tasks/new")}
           className="fab-button"
         >
-          <Plus className="w-7 h-7" />
+          <Plus />
         </button>
       )}
 
@@ -530,7 +530,7 @@ export default function Dashboard() {
         <nav className="bottom-nav">
           <div className="bottom-nav-content">
             <button className="bottom-nav-item active">
-              <Home className="w-5 h-5" />
+              <Home />
               <span>Главная</span>
             </button>
 
@@ -538,7 +538,7 @@ export default function Dashboard() {
               className="bottom-nav-item"
               onClick={() => setLocation("/admin/users")}
             >
-              <Settings className="w-5 h-5" />
+              <Settings />
               <span>Настройки</span>
             </button>
 
@@ -546,7 +546,7 @@ export default function Dashboard() {
               className="bottom-nav-item"
               onClick={() => logout()}
             >
-              <LogOut className="w-5 h-5" />
+              <LogOut />
               <span>Выход</span>
             </button>
           </div>
