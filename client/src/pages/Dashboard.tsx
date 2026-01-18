@@ -76,6 +76,11 @@ export default function Dashboard() {
       .filter((c): c is string => c !== null && c !== undefined && c.trim() !== "")
   )).sort();
 
+  // Scroll to top on mount
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
+
   useEffect(() => {
     if (selectedTask) {
       const updated = tasks.find(t => t.id === selectedTask.id);

@@ -28,6 +28,11 @@ export default function Login() {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
 
+  // Scroll to top on mount
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
+
   useEffect(() => {
     if (!authLoading && user) {
       setLocation("/dashboard");

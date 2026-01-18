@@ -110,6 +110,25 @@
     height: 56px;
   }
 
+  /* iOS Safari notch support - extend background behind status bar */
+  @supports (padding-top: env(safe-area-inset-top)) {
+    .app-layout::before {
+      content: '';
+      display: block;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: env(safe-area-inset-top, 0);
+      background: hsl(var(--primary));
+      z-index: 100;
+    }
+
+    .app-layout {
+      padding-top: env(safe-area-inset-top, 0);
+    }
+  }
+
   .app-header-content {
     @apply flex items-center justify-between px-4 max-w-6xl mx-auto h-full;
   }
@@ -136,6 +155,10 @@
       padding-top: 64px;
       padding-left: 240px;
       padding-bottom: 0;
+    }
+
+    .app-layout::before {
+      display: none;
     }
   }
 
