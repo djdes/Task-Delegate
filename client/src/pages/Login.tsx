@@ -78,17 +78,23 @@ export default function Login() {
   const onSubmit = async (values: FormValues) => {
     setIsLoading(true);
     try {
+      // Blur input first to hide keyboard
+      if (document.activeElement instanceof HTMLElement) {
+        document.activeElement.blur();
+      }
+
       await login(values.phone);
-      // Fix viewport before navigation
-      resetMobileViewport();
-      setLocation("/dashboard");
+
+      // Wait for keyboard to fully close, then reload to /dashboard
+      setTimeout(() => {
+        window.location.href = "/dashboard";
+      }, 100);
     } catch (error: any) {
       toast({
         title: "Ошибка",
         description: error.message || "Пользователь с таким номером не найден",
         variant: "destructive",
       });
-    } finally {
       setIsLoading(false);
     }
   };
