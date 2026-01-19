@@ -25,8 +25,7 @@ npm run reset-tasks      # Reset recurring tasks (daily cron job)
 Task-Delegate/
 ├── client/src/
 │   ├── components/           # React components
-│   │   ├── ui/               # Shadcn/ui базовые компоненты
-│   │   ├── CreateTaskDialog.tsx    # Диалог создания задачи
+│   │   ├── ui/               # Shadcn/ui базовые компоненты (16 файлов)
 │   │   ├── EditTaskDialog.tsx      # Диалог редактирования задачи
 │   │   ├── TaskViewDialog.tsx      # Просмотр задачи + загрузка фото
 │   │   ├── DuplicateTaskDialog.tsx # Дублирование задачи
@@ -38,8 +37,7 @@ Task-Delegate/
 │   │   ├── use-tasks.ts      # CRUD операции для задач (TanStack Query)
 │   │   ├── use-workers.ts    # CRUD операции для сотрудников
 │   │   ├── use-users.ts      # Получение списка пользователей
-│   │   ├── use-toast.ts      # Toast уведомления
-│   │   └── use-mobile.tsx    # Определение мобильного устройства
+│   │   └── use-toast.ts      # Toast уведомления
 │   ├── pages/
 │   │   ├── Login.tsx         # Страница входа по номеру телефона
 │   │   ├── Dashboard.tsx     # Главная страница со списком задач
