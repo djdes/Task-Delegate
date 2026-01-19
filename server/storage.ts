@@ -1,7 +1,17 @@
+/**
+ * @fileoverview Data Access Layer для работы с MySQL через Drizzle ORM
+ *
+ * Все методы работают с тремя таблицами: users, tasks, workers
+ *
+ * ВАЖНО: weekDays и photoUrls хранятся в БД как JSON строки,
+ * но возвращаются как массивы (парсинг при чтении, сериализация при записи)
+ */
+
 import { workers, tasks, users, type Worker, type InsertWorker, type Task, type InsertTask, type User, type InsertUser, type UpdateUser } from "@shared/schema";
 import { db } from "./db";
 import { eq } from "drizzle-orm";
 
+/** Интерфейс хранилища данных */
 export interface IStorage {
   // Users
   getUserByPhone(phone: string): Promise<User | undefined>;
@@ -25,14 +35,24 @@ export interface IStorage {
   deleteTask(id: number): Promise<void>;
 }
 
+/** Реализация хранилища с MySQL через Drizzle ORM */
 export class DatabaseStorage implements IStorage {
+  /**
+   * Поиск пользователя по номеру телефона
+   * @param phone - Номер телефона (будет нормализован: убраны пробелы и дефисы)
+   * @returns Пользователь или undefined если не найден
+   */
   async getUserByPhone(phone: string): Promise<User | undefined> {
-    // Нормализуем номер телефона (убираем пробелы и дефисы)
     const normalizedPhone = phone.replace(/\s+/g, "").replace(/-/g, "");
     const [user] = await db.select().from(users).where(eq(users.phone, normalizedPhone));
     return user || undefined;
   }
 
+  /**
+   * Создание нового пользователя
+   * @param insertUser - Данные пользователя (phone обязателен)
+   * @returns Созданный пользователь с id
+   */
   async createUser(insertUser: InsertUser): Promise<User> {
     // Нормализуем номер телефона
     const normalizedPhone = insertUser.phone.replace(/\s+/g, "").replace(/-/g, "");
@@ -66,6 +86,17 @@ export class DatabaseStorage implements IStorage {
     return user || undefined;
   }
 
+  /**
+   * Изменение баланса бонусов пользователя
+   * @param id - ID пользователя
+   * @param amount - Сумма изменения (положительная для начисления, отрицательная для списания)
+   * @returns Обновлённый пользователь или undefined
+   * @example
+   * // Начислить 100 рублей за выполнение задачи
+   * await storage.updateUserBalance(userId, 100);
+   * // Списать при отмене выполнения
+   * await storage.updateUserBalance(userId, -100);
+   */
   async updateUserBalance(id: number, amount: number): Promise<User | undefined> {
     const [existingUser] = await db.select().from(users).where(eq(users.id, id));
     if (!existingUser) return undefined;
@@ -77,6 +108,7 @@ export class DatabaseStorage implements IStorage {
     return user || undefined;
   }
 
+  /** Сброс баланса пользователя до 0 (вызывается админом после выплаты) */
   async resetUserBalance(id: number): Promise<User | undefined> {
     await db.update(users).set({ bonusBalance: 0 }).where(eq(users.id, id));
     const [user] = await db.select().from(users).where(eq(users.id, id));
@@ -109,6 +141,12 @@ export class DatabaseStorage implements IStorage {
     await db.delete(workers).where(eq(workers.id, id));
   }
 
+  /**
+   * Получение всех задач
+   * @returns Массив задач с распарсенными weekDays и photoUrls
+   * @note weekDays возвращается как number[] (0=Вс, 1=Пн, ..., 6=Сб)
+   * @note photoUrls возвращается как string[] (пустой массив если нет фото)
+   */
   async getTasks(): Promise<Task[]> {
     const result = await db.select({
       id: tasks.id,
@@ -159,6 +197,12 @@ export class DatabaseStorage implements IStorage {
     } as Task;
   }
 
+  /**
+   * Создание новой задачи
+   * @param insertTask - Данные задачи
+   * @returns Созданная задача с id
+   * @note weekDays и photoUrls автоматически сериализуются в JSON для хранения
+   */
   async createTask(insertTask: InsertTask): Promise<Task> {
     // Сериализуем weekDays и photoUrls в JSON строку для хранения в БД
     const taskData = {
@@ -197,6 +241,17 @@ export class DatabaseStorage implements IStorage {
     } as Task;
   }
 
+  /**
+   * Частичное обновление задачи
+   * @param id - ID задачи
+   * @param updates - Поля для обновления (только переданные поля будут изменены)
+   * @returns Обновлённая задача или undefined если не найдена
+   * @example
+   * // Отметить выполненной
+   * await storage.updateTask(taskId, { isCompleted: true });
+   * // Добавить фото
+   * await storage.updateTask(taskId, { photoUrls: [...existing, newUrl] });
+   */
   async updateTask(id: number, updates: Partial<InsertTask>): Promise<Task | undefined> {
     // Сериализуем weekDays и photoUrls если они переданы
     const updateData = {
