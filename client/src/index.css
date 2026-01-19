@@ -123,14 +123,13 @@
 
   @media (min-width: 1024px) {
     .app-header {
-      @apply fixed top-0 z-50;
-      left: 0;
-      right: 0;
       height: 68px;
     }
 
     .has-sidebar .app-header {
+      @apply fixed top-0 z-50;
       left: 240px;
+      right: 0;
     }
 
     .app-header-content {
@@ -146,11 +145,11 @@
 
   @media (min-width: 1024px) {
     .app-layout {
-      padding-top: 68px;
       padding-bottom: 0;
     }
 
     .app-layout.has-sidebar {
+      padding-top: 68px;
       padding-left: 240px;
     }
   }
