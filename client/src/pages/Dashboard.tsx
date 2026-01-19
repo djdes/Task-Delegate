@@ -225,7 +225,7 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="app-layout">
+    <div className={`app-layout ${user?.isAdmin ? 'has-sidebar' : ''}`}>
       {/* Header */}
       <header className="app-header relative">
         <div className="app-header-content">

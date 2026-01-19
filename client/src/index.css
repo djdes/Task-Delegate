@@ -118,17 +118,23 @@
   }
 
   .app-header-content {
-    @apply flex items-center justify-between px-4 max-w-6xl mx-auto h-full;
+    @apply flex items-center justify-between px-4 h-full;
   }
 
   @media (min-width: 1024px) {
     .app-header {
-      @apply fixed top-0 left-0 right-0 z-50 px-6;
+      @apply fixed top-0 z-50;
+      left: 0;
+      right: 0;
       height: 68px;
     }
 
+    .has-sidebar .app-header {
+      left: 240px;
+    }
+
     .app-header-content {
-      @apply px-0;
+      @apply px-8;
     }
   }
 
@@ -140,9 +146,12 @@
 
   @media (min-width: 1024px) {
     .app-layout {
-      padding-top: 64px;
-      padding-left: 240px;
+      padding-top: 68px;
       padding-bottom: 0;
+    }
+
+    .app-layout.has-sidebar {
+      padding-left: 240px;
     }
   }
 
@@ -153,7 +162,9 @@
 
   @media (min-width: 1024px) {
     .app-content {
-      @apply px-6 py-6 max-w-6xl mx-auto;
+      @apply px-8 py-6;
+      max-width: 1600px;
+      margin: 0 auto;
     }
   }
 
@@ -205,15 +216,27 @@
     @apply space-y-3;
   }
 
-  @media (min-width: 768px) {
+  @media (min-width: 640px) {
     .task-list {
       @apply grid grid-cols-2 gap-4 space-y-0;
     }
   }
 
-  @media (min-width: 1280px) {
+  @media (min-width: 1024px) {
+    .task-list {
+      @apply grid-cols-2 gap-5;
+    }
+  }
+
+  @media (min-width: 1400px) {
     .task-list {
       @apply grid-cols-3;
+    }
+  }
+
+  @media (min-width: 1800px) {
+    .task-list {
+      @apply grid-cols-4;
     }
   }
 
