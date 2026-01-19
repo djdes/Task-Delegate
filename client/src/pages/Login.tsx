@@ -28,12 +28,31 @@ export default function Login() {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
 
+  // Fix mobile keyboard viewport issue
+  const resetMobileViewport = () => {
+    // Blur active element to hide keyboard
+    if (document.activeElement instanceof HTMLElement) {
+      document.activeElement.blur();
+    }
+
+    // Force viewport recalculation
+    window.scrollTo(0, 0);
+    document.documentElement.scrollTop = 0;
+    document.body.scrollTop = 0;
+
+    // Trigger resize to fix viewport height
+    window.dispatchEvent(new Event('resize'));
+
+    // Additional fix for iOS/Android viewport
+    document.body.style.height = '100vh';
+    requestAnimationFrame(() => {
+      document.body.style.height = '';
+    });
+  };
+
   useEffect(() => {
     if (!authLoading && user) {
-      // Reset scroll before navigation
-      window.scrollTo(0, 0);
-      document.documentElement.scrollTop = 0;
-      document.body.scrollTop = 0;
+      resetMobileViewport();
       setLocation("/dashboard");
     }
   }, [user, authLoading, setLocation]);
@@ -60,10 +79,8 @@ export default function Login() {
     setIsLoading(true);
     try {
       await login(values.phone);
-      // Reset scroll before navigation
-      window.scrollTo(0, 0);
-      document.documentElement.scrollTop = 0;
-      document.body.scrollTop = 0;
+      // Fix viewport before navigation
+      resetMobileViewport();
       setLocation("/dashboard");
     } catch (error: any) {
       toast({
