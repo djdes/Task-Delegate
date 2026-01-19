@@ -34,9 +34,39 @@
 2. Проверьте, что переменные окружения в `.env` настроены правильно
 3. Проверьте логи: `pm2 logs task-delegate` или `journalctl -u your-service`
 
+## Cron для сброса задач
+
+Задачи с `isRecurring: true` должны сбрасываться (`isCompleted: false`) каждый день в полночь.
+
+### Настройка cron
+
+```bash
+# Создайте папку для логов
+mkdir -p /var/www/tasks/data/www/tasks.magday.ru/logs
+
+# Добавьте задачу в crontab
+crontab -e
+```
+
+Добавьте строку (замените пути на свои):
+```
+0 0 * * * cd /var/www/tasks/data/www/tasks.magday.ru && /var/www/tasks/data/.nvm/versions/node/v24.12.0/bin/npm run reset-tasks >> ./logs/reset-tasks.log 2>&1
+```
+
+### Проверка
+
+```bash
+# Запустить вручную
+cd /var/www/tasks/data/www/tasks.magday.ru && npm run reset-tasks
+
+# Проверить логи
+cat ./logs/reset-tasks.log
+```
+
 ## Важные моменты
 
 - Убедитесь, что `NODE_ENV=production` в `.env`
 - Проверьте, что порт в `.env` совпадает с портом в конфигурации веб-сервера
 - Убедитесь, что база данных доступна с хостинга
 - Проверьте права доступа к папке `uploads/`
+- Проверьте права доступа к папке `logs/` для cron
