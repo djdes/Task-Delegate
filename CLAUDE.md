@@ -9,7 +9,10 @@ npm run dev              # Start dev server with hot reload
 npm run build            # Build for production (client + server)
 npm start                # Run production build
 npm run check            # TypeScript type checking
+npm run test             # Run tests (vitest)
+npm run test:watch       # Run tests in watch mode
 npm run db:push          # Push Drizzle schema changes to MySQL
+npm run db:indexes       # Add database indexes for performance
 npm run setup-db         # Initialize database tables
 npm run create-admin     # Create initial admin user
 npm run update-tasks     # Run task table migrations
@@ -53,13 +56,16 @@ Task-Delegate/
 │   ├── main.tsx              # Точка входа React
 │   └── index.css             # Все стили приложения (Tailwind + кастомные)
 ├── server/
-│   ├── index.ts              # Express сервер, сессии, статика
+│   ├── index.ts              # Express сервер, сессии, rate limiting, graceful shutdown
 │   ├── routes.ts             # ВСЕ API эндпоинты + middleware авторизации
 │   ├── storage.ts            # Data Access Layer (SQL запросы через Drizzle)
+│   ├── logger.ts             # Логирование через Pino (dev: pretty, prod: JSON)
 │   ├── db.ts                 # Подключение к MySQL (Drizzle ORM)
 │   ├── mail.ts               # Отправка email при выполнении задачи
 │   ├── vite.ts               # Dev-режим с Vite
 │   └── static.ts             # Раздача статики в production
+├── tests/
+│   └── schema.test.ts        # Тесты валидации Zod схем
 ├── shared/
 │   ├── schema.ts             # Drizzle схема БД + Zod валидация + TypeScript типы
 │   └── routes.ts             # Описание API эндпоинтов с Zod схемами
@@ -279,3 +285,27 @@ File uploads via Multer to `uploads/` directory (images only, 10MB max).
 
 ### JSON поля в MySQL
 weekDays и photoUrls хранятся как VARCHAR/TEXT с JSON. Парсинг происходит в storage.ts при чтении, сериализация при записи.
+
+## Security Features
+
+- **Rate Limiting**: 1000 req/15min общий лимит, 10 req/15min для авторизации
+- **Phone Validation**: Zod валидация формата +7XXXXXXXXXX на клиенте и сервере
+- **Session Security**: httpOnly cookies, sameSite: lax, secure в production
+- **Error Boundaries**: React ErrorBoundary для graceful error handling
+
+## Production Features
+
+- **Health Check**: GET /api/health - проверка состояния сервера и БД
+- **Graceful Shutdown**: Корректное завершение при SIGTERM/SIGINT
+- **Structured Logging**: Pino logger (JSON в production, pretty в dev)
+- **PWA Support**: Service Worker, manifest.json, offline caching
+
+## Testing
+
+```bash
+npm run test        # Запуск тестов один раз
+npm run test:watch  # Запуск в watch режиме
+npm run test:ui     # Запуск с UI интерфейсом
+```
+
+Тесты находятся в `tests/` директории. Используется Vitest.

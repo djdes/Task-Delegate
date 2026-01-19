@@ -2,17 +2,53 @@ import "dotenv/config";
 import express, { type Request, Response, NextFunction } from "express";
 import session from "express-session";
 import createMemoryStore from "memorystore";
+import rateLimit from "express-rate-limit";
 import path from "path";
 import { existsSync, mkdirSync } from "fs";
 import { registerRoutes } from "./routes";
 import { serveStatic } from "./static";
 import { createServer } from "http";
+import { logger, httpLogger } from "./logger";
+import { db } from "./db";
 
 const app = express();
 const httpServer = createServer(app);
 
 // Настройка хранилища сессий
 const MemoryStore = createMemoryStore(session);
+
+// Trust proxy for rate limiting behind nginx/apache
+app.set("trust proxy", 1);
+
+// Rate limiting - общий лимит
+const generalLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 минут
+  max: 1000, // 1000 запросов на окно
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { message: "Слишком много запросов, попробуйте позже" },
+  skip: (req) => req.path === "/api/health", // Пропускаем health check
+});
+
+// Rate limiting - строгий лимит для auth endpoints
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 минут
+  max: 10, // 10 попыток входа
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { message: "Слишком много попыток входа, попробуйте через 15 минут" },
+  keyGenerator: (req) => {
+    // Используем IP + phone для более точного ограничения
+    const phone = req.body?.phone || "";
+    return `${req.ip}-${phone}`;
+  },
+});
+
+// Применяем общий rate limiter
+app.use(generalLimiter);
+
+// Применяем строгий лимит для авторизации
+app.use("/api/auth/login", authLimiter);
 
 // Настройка сессий
 app.use(
@@ -24,7 +60,7 @@ app.use(
       checkPeriod: 86400000, // Очистка просроченных сессий каждые 24 часа
     }),
     cookie: {
-      secure: false, // В dev режиме должен быть false для работы без HTTPS
+      secure: process.env.NODE_ENV === "production", // HTTPS в production
       httpOnly: true,
       maxAge: 30 * 24 * 60 * 60 * 1000, // 30 дней
       sameSite: "lax",
@@ -57,41 +93,86 @@ if (!existsSync(uploadsDir)) {
 // Статические файлы для загрузок
 app.use("/uploads", express.static(uploadsDir));
 
-export function log(message: string, source = "express") {
-  const formattedTime = new Date().toLocaleTimeString("en-US", {
-    hour: "numeric",
-    minute: "2-digit",
-    second: "2-digit",
-    hour12: true,
-  });
+// Health check endpoint (до логирования запросов)
+app.get("/api/health", async (req, res) => {
+  try {
+    // Проверяем подключение к БД простым запросом
+    await db.execute("SELECT 1" as any);
+    res.json({
+      status: "healthy",
+      timestamp: new Date().toISOString(),
+      uptime: process.uptime(),
+      memory: process.memoryUsage(),
+    });
+  } catch (err) {
+    logger.error({ err }, "Health check failed - database connection error");
+    res.status(503).json({
+      status: "unhealthy",
+      timestamp: new Date().toISOString(),
+      error: "Database connection failed",
+    });
+  }
+});
 
-  console.log(`${formattedTime} [${source}] ${message}`);
-}
-
+// HTTP request logging
 app.use((req, res, next) => {
   const start = Date.now();
-  const path = req.path;
-  let capturedJsonResponse: Record<string, any> | undefined = undefined;
-
-  const originalResJson = res.json;
-  res.json = function (bodyJson, ...args) {
-    capturedJsonResponse = bodyJson;
-    return originalResJson.apply(res, [bodyJson, ...args]);
-  };
+  const requestPath = req.path;
 
   res.on("finish", () => {
     const duration = Date.now() - start;
-    if (path.startsWith("/api")) {
-      let logLine = `${req.method} ${path} ${res.statusCode} in ${duration}ms`;
-      if (capturedJsonResponse) {
-        logLine += ` :: ${JSON.stringify(capturedJsonResponse)}`;
-      }
-
-      log(logLine);
+    if (requestPath.startsWith("/api") && requestPath !== "/api/health") {
+      httpLogger.info({
+        method: req.method,
+        path: requestPath,
+        status: res.statusCode,
+        duration,
+        ip: req.ip,
+      });
     }
   });
 
   next();
+});
+
+// Graceful shutdown handler
+let isShuttingDown = false;
+
+function gracefulShutdown(signal: string) {
+  if (isShuttingDown) return;
+  isShuttingDown = true;
+
+  logger.info({ signal }, "Received shutdown signal, starting graceful shutdown...");
+
+  // Перестаем принимать новые соединения
+  httpServer.close((err) => {
+    if (err) {
+      logger.error({ err }, "Error during server close");
+      process.exit(1);
+    }
+    logger.info("HTTP server closed");
+    process.exit(0);
+  });
+
+  // Принудительное завершение через 30 секунд
+  setTimeout(() => {
+    logger.error("Forced shutdown after timeout");
+    process.exit(1);
+  }, 30000);
+}
+
+// Регистрируем обработчики сигналов
+process.on("SIGTERM", () => gracefulShutdown("SIGTERM"));
+process.on("SIGINT", () => gracefulShutdown("SIGINT"));
+
+// Обработка необработанных ошибок
+process.on("uncaughtException", (err) => {
+  logger.fatal({ err }, "Uncaught exception");
+  gracefulShutdown("uncaughtException");
+});
+
+process.on("unhandledRejection", (reason, promise) => {
+  logger.error({ reason, promise }, "Unhandled rejection");
 });
 
 (async () => {
@@ -101,21 +182,21 @@ app.use((req, res, next) => {
     const status = err.status || err.statusCode || 500;
     const message = err.message || "Internal Server Error";
 
+    logger.error({ err, status }, "Request error");
     res.status(status).json({ message });
-    throw err;
   });
 
   // importantly only setup vite in development and after
   // setting up all the other routes so the catch-all route
   // doesn't interfere with the other routes
   const nodeEnv = process.env.NODE_ENV || "development";
-  log(`NODE_ENV: ${nodeEnv}`);
-  
+  logger.info({ nodeEnv }, "Starting server");
+
   if (nodeEnv === "production") {
-    log("Using production mode - serving static files");
+    logger.info("Using production mode - serving static files");
     serveStatic(app);
   } else {
-    log("Using development mode - setting up Vite");
+    logger.info("Using development mode - setting up Vite");
     const { setupVite } = await import("./vite");
     await setupVite(httpServer, app);
   }
@@ -129,7 +210,10 @@ app.use((req, res, next) => {
     port,
     "0.0.0.0",
     () => {
-      log(`serving on port ${port}`);
+      logger.info({ port }, "Server listening");
     },
   );
 })();
+
+// Export for potential testing
+export { app, httpServer };
