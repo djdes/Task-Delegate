@@ -27,26 +27,13 @@ type EditFormValues = z.infer<typeof editFormSchema>;
 
 export default function AdminUsers() {
   const [, setLocation] = useLocation();
-  const { user } = useAuth();
+  const { user, isLoading: authLoading } = useAuth();
   const queryClient = useQueryClient();
   const [editingUserId, setEditingUserId] = useState<number | null>(null);
   const [editPhone, setEditPhone] = useState("");
   const [editName, setEditName] = useState("");
 
-  // Проверка прав администратора
-  if (!user || !user.isAdmin) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-muted/20 to-background">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold mb-2">Доступ запрещен</h1>
-          <p className="text-muted-foreground mb-4">Требуются права администратора</p>
-          <Button onClick={() => setLocation("/")}>На главную</Button>
-        </div>
-      </div>
-    );
-  }
-
-  // Получаем список пользователей
+  // Получаем список пользователей (хук должен быть до early return)
   const { data: users = [], isLoading } = useQuery({
     queryKey: ["users"],
     queryFn: async () => {
@@ -58,6 +45,7 @@ export default function AdminUsers() {
       }
       return response.json();
     },
+    enabled: !!user?.isAdmin,
   });
 
   // Мутация для создания пользователя
@@ -134,6 +122,31 @@ export default function AdminUsers() {
       },
     });
   };
+
+  // Проверка загрузки авторизации
+  if (authLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-muted/20 to-background">
+        <div className="flex flex-col items-center gap-4">
+          <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
+          <span className="text-muted-foreground">Загрузка...</span>
+        </div>
+      </div>
+    );
+  }
+
+  // Проверка прав администратора
+  if (!user || !user.isAdmin) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-muted/20 to-background">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold mb-2">Доступ запрещен</h1>
+          <p className="text-muted-foreground mb-4">Требуются права администратора</p>
+          <Button onClick={() => setLocation("/")}>На главную</Button>
+        </div>
+      </div>
+    );
+  }
 
   const startEditing = (u: any) => {
     setEditingUserId(u.id);
