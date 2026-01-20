@@ -22,6 +22,8 @@ jobs:
             cd ${{ secrets.DEPLOY_PATH }}
             git pull origin main
             npm install
+            npm run db:push
+            npm run add-companies
             npm run update-tasks
             npm run build
             pm2 restart all

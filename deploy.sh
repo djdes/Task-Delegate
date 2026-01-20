@@ -30,6 +30,12 @@ ssh -p $SERVER_PORT $SERVER_USER@$SERVER_HOST << 'EOF'
     echo ">>> git pull"
     git pull
 
+    echo ">>> npm run db:push"
+    npm run db:push
+
+    echo ">>> npm run add-companies"
+    npm run add-companies
+
     echo ">>> npm run build"
     npm run build
 
