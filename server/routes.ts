@@ -823,5 +823,40 @@ export async function registerRoutes(
     }
   });
 
+  // Удаление пользователя (только для админа)
+  app.delete("/api/users/:id", requireAuth, requireAdmin, async (req, res) => {
+    try {
+      const userId = Number(req.params.id);
+      const currentUser = await storage.getUserById(req.session.userId!);
+
+      // Нельзя удалить самого себя
+      if (userId === req.session.userId) {
+        return res.status(400).json({ message: "Нельзя удалить самого себя" });
+      }
+
+      const userToDelete = await storage.getUserById(userId);
+      if (!userToDelete) {
+        return res.status(404).json({ message: "Пользователь не найден" });
+      }
+
+      // Нельзя удалять админов
+      if (userToDelete.isAdmin) {
+        return res.status(400).json({ message: "Нельзя удалить администратора" });
+      }
+
+      // Проверяем что пользователь из той же компании
+      if (userToDelete.companyId !== currentUser?.companyId) {
+        return res.status(403).json({ message: "Нет прав для удаления этого пользователя" });
+      }
+
+      await storage.deleteUser(userId);
+      console.log(`User ${userId} deleted by admin ${req.session.userId}`);
+      res.json({ success: true });
+    } catch (err: any) {
+      console.error("Error deleting user:", err);
+      res.status(500).json({ message: "Ошибка удаления пользователя", error: err.message });
+    }
+  });
+
   return httpServer;
 }

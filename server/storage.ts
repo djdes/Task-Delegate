@@ -26,6 +26,7 @@ export interface IStorage {
   updateUser(id: number, user: UpdateUser): Promise<User | undefined>;
   updateUserBalance(id: number, amount: number): Promise<User | undefined>;
   resetUserBalance(id: number): Promise<User | undefined>;
+  deleteUser(id: number): Promise<void>;
 
   // Workers
   getWorkers(companyId?: number): Promise<Worker[]>;
@@ -166,6 +167,14 @@ export class DatabaseStorage implements IStorage {
     await db.update(users).set({ bonusBalance: 0 }).where(eq(users.id, id));
     const [user] = await db.select().from(users).where(eq(users.id, id));
     return user || undefined;
+  }
+
+  /** Удаление пользователя (сначала обнуляет workerId у связанных задач) */
+  async deleteUser(id: number): Promise<void> {
+    // Обнуляем workerId у всех задач этого пользователя
+    await db.update(tasks).set({ workerId: null }).where(eq(tasks.workerId, id));
+    // Удаляем пользователя
+    await db.delete(users).where(eq(users.id, id));
   }
 
   // ===================== WORKERS =====================

@@ -3,7 +3,7 @@ import { useLocation } from "wouter";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ArrowLeft, UserPlus, Users, Coins, RotateCcw, Pencil, X, Check } from "lucide-react";
+import { ArrowLeft, UserPlus, Users, Coins, RotateCcw, Pencil, X, Check, Trash2 } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
@@ -99,6 +99,24 @@ export default function AdminUsers() {
       if (!response.ok) {
         const error = await response.json();
         throw new Error(error.message || "Failed to reset balance");
+      }
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["users"] });
+    },
+  });
+
+  // Мутация для удаления пользователя
+  const deleteUserMutation = useMutation({
+    mutationFn: async (userId: number) => {
+      const response = await fetch(`/api/users/${userId}`, {
+        method: "DELETE",
+        credentials: "include",
+      });
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || "Failed to delete user");
       }
       return response.json();
     },
@@ -387,6 +405,21 @@ export default function AdminUsers() {
                               className="text-xs"
                             >
                               <Pencil className="w-3.5 h-3.5" />
+                            </Button>
+                          )}
+                          {!u.isAdmin && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => {
+                                if (confirm(`Удалить пользователя ${u.name || u.phone}?`)) {
+                                  deleteUserMutation.mutate(u.id);
+                                }
+                              }}
+                              disabled={deleteUserMutation.isPending}
+                              className="text-xs text-destructive hover:text-destructive"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
                             </Button>
                           )}
                           {!u.isAdmin && u.bonusBalance > 0 && (
