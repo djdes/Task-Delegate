@@ -11,7 +11,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:ui": "vitest --ui",
-    "db:push": "yes n | drizzle-kit push || true",
+    "db:push": "drizzle-kit push",
     "db:indexes": "tsx script/add-indexes.ts",
     "create-admin": "tsx script/create-admin.ts",
     "setup-db": "tsx script/create-tables.ts",
