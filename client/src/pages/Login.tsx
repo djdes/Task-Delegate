@@ -224,7 +224,7 @@ export default function Login() {
                 onClick={() => setLocation("/register")}
                 className="text-xs text-muted-foreground/60 hover:text-muted-foreground transition-colors"
               >
-                Новый администратор
+                Зарегистрироваться
               </button>
             </div>
           </form>

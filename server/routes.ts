@@ -7,7 +7,7 @@ import { storage } from "./storage";
 import { api } from "@shared/routes";
 import { z } from "zod";
 import { sendTaskCompletedEmail } from "./mail";
-import { registerCompanySchema } from "@shared/schema";
+import { registerCompanySchema, loginSchema } from "@shared/schema";
 
 // Настройка загрузки файлов
 const uploadsDir = path.join(process.cwd(), "uploads");
@@ -166,6 +166,77 @@ export async function registerRoutes(
         });
       }
       console.error('Error registering company:', err);
+      res.status(500).json({ message: 'Ошибка регистрации', error: err.message });
+    }
+  });
+
+  // Регистрация пользователя к существующей компании (по телефону админа)
+  app.post("/api/users/register", async (req, res) => {
+    try {
+      const registerUserSchema = z.object({
+        phone: loginSchema.shape.phone,
+        name: z.string().min(1, "Введите имя"),
+        adminPhone: loginSchema.shape.phone,
+      });
+
+      const input = registerUserSchema.parse(req.body);
+
+      // Нормализуем номера телефонов
+      const normalizedPhone = input.phone.replace(/\s+/g, "").replace(/-/g, "");
+      const normalizedAdminPhone = input.adminPhone.replace(/\s+/g, "").replace(/-/g, "");
+
+      // Проверяем, существует ли пользователь с таким телефоном
+      const existingUser = await storage.getUserByPhone(normalizedPhone);
+      if (existingUser) {
+        return res.status(400).json({
+          message: "Пользователь с таким номером уже существует",
+          field: "phone",
+        });
+      }
+
+      // Ищем администратора по телефону
+      const admin = await storage.getUserByPhone(normalizedAdminPhone);
+      if (!admin) {
+        return res.status(400).json({
+          message: "Администратор с таким номером не найден",
+          field: "adminPhone",
+        });
+      }
+
+      if (!admin.isAdmin) {
+        return res.status(400).json({
+          message: "Указанный пользователь не является администратором",
+          field: "adminPhone",
+        });
+      }
+
+      if (!admin.companyId) {
+        return res.status(400).json({
+          message: "У администратора не привязана компания",
+          field: "adminPhone",
+        });
+      }
+
+      // Создаём пользователя в компании админа
+      const user = await storage.createUser({
+        phone: normalizedPhone,
+        name: input.name,
+        isAdmin: false,
+        companyId: admin.companyId,
+      });
+
+      // Автоматически авторизуем пользователя
+      req.session.userId = user.id;
+
+      res.status(201).json(user);
+    } catch (err: any) {
+      if (err instanceof z.ZodError) {
+        return res.status(400).json({
+          message: err.errors[0].message,
+          field: err.errors[0].path.join('.'),
+        });
+      }
+      console.error('Error registering user:', err);
       res.status(500).json({ message: 'Ошибка регистрации', error: err.message });
     }
   });

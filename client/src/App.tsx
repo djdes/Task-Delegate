@@ -9,6 +9,8 @@ import { ErrorBoundary } from "@/components/ErrorBoundary";
 import Dashboard from "@/pages/Dashboard";
 import Login from "@/pages/Login";
 import Register from "@/pages/Register";
+import RegisterCompany from "@/pages/RegisterCompany";
+import RegisterUser from "@/pages/RegisterUser";
 import CreateTask from "@/pages/CreateTask";
 import EditTask from "@/pages/EditTask";
 import CreateWorker from "@/pages/CreateWorker";
@@ -51,6 +53,8 @@ function Router() {
       <Switch>
         <Route path="/" component={Login} />
         <Route path="/register" component={Register} />
+        <Route path="/register/company" component={RegisterCompany} />
+        <Route path="/register/user" component={RegisterUser} />
         <Route path="/dashboard" component={Dashboard} />
         <Route path="/admin/users" component={AdminUsers} />
         <Route path="/admin/settings" component={CompanySettings} />
