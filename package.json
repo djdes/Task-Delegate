@@ -16,7 +16,8 @@
     "create-admin": "tsx script/create-admin.ts",
     "setup-db": "tsx script/create-tables.ts",
     "update-tasks": "tsx script/update-tasks-table.ts",
-    "reset-tasks": "tsx script/reset-recurring-tasks.ts"
+    "reset-tasks": "tsx script/reset-recurring-tasks.ts",
+    "add-companies": "tsx script/add-companies.ts"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",

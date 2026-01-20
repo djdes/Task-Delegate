@@ -8,6 +8,7 @@ import { AuthProvider } from "@/contexts/AuthContext";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import Dashboard from "@/pages/Dashboard";
 import Login from "@/pages/Login";
+import Register from "@/pages/Register";
 import CreateTask from "@/pages/CreateTask";
 import EditTask from "@/pages/EditTask";
 import CreateWorker from "@/pages/CreateWorker";
@@ -48,6 +49,7 @@ function Router() {
       <ScrollToTop />
       <Switch>
         <Route path="/" component={Login} />
+        <Route path="/register" component={Register} />
         <Route path="/dashboard" component={Dashboard} />
         <Route path="/admin/users" component={AdminUsers} />
         <Route path="/tasks/new" component={CreateTask} />

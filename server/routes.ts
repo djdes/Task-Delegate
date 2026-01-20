@@ -7,6 +7,7 @@ import { storage } from "./storage";
 import { api } from "@shared/routes";
 import { z } from "zod";
 import { sendTaskCompletedEmail } from "./mail";
+import { registerCompanySchema } from "@shared/schema";
 
 // Настройка загрузки файлов
 const uploadsDir = path.join(process.cwd(), "uploads");
@@ -122,10 +123,75 @@ export async function registerRoutes(
     });
   });
 
-  // Workers
-  app.get(api.workers.list.path, async (req, res) => {
+  // Регистрация новой компании и администратора
+  app.post("/api/companies/register", async (req, res) => {
     try {
-      const workers = await storage.getWorkers();
+      const input = registerCompanySchema.parse(req.body);
+
+      // Нормализуем номер телефона
+      const normalizedPhone = input.phone.replace(/\s+/g, "").replace(/-/g, "");
+
+      // Проверяем, существует ли пользователь с таким телефоном
+      const existingUser = await storage.getUserByPhone(normalizedPhone);
+      if (existingUser) {
+        return res.status(400).json({
+          message: "Пользователь с таким номером уже существует",
+          field: "phone",
+        });
+      }
+
+      // Создаём компанию
+      const company = await storage.createCompany({
+        name: input.companyName,
+        email: input.email,
+      });
+
+      // Создаём администратора компании
+      const user = await storage.createUser({
+        phone: normalizedPhone,
+        name: input.adminName || undefined,
+        isAdmin: true,
+        companyId: company.id,
+      });
+
+      // Автоматически авторизуем пользователя
+      req.session.userId = user.id;
+
+      res.status(201).json({ company, user });
+    } catch (err: any) {
+      if (err instanceof z.ZodError) {
+        return res.status(400).json({
+          message: err.errors[0].message,
+          field: err.errors[0].path.join('.'),
+        });
+      }
+      console.error('Error registering company:', err);
+      res.status(500).json({ message: 'Ошибка регистрации', error: err.message });
+    }
+  });
+
+  // Получить компанию текущего пользователя
+  app.get("/api/companies/me", requireAuth, async (req, res) => {
+    try {
+      const user = await storage.getUserById(req.session.userId!);
+      if (!user || !user.companyId) {
+        return res.json(null);
+      }
+
+      const company = await storage.getCompanyById(user.companyId);
+      res.json(company || null);
+    } catch (err: any) {
+      console.error('Error fetching company:', err);
+      res.status(500).json({ message: 'Ошибка', error: err.message });
+    }
+  });
+
+  // Workers
+  app.get(api.workers.list.path, requireAuth, async (req, res) => {
+    try {
+      // Фильтруем по компании текущего пользователя
+      const user = await storage.getUserById(req.session.userId!);
+      const workers = await storage.getWorkers(user?.companyId ?? undefined);
       res.json(workers);
     } catch (err: any) {
       console.error('Error fetching workers:', err);
@@ -146,10 +212,15 @@ export async function registerRoutes(
     }
   });
 
-  app.post(api.workers.create.path, async (req, res) => {
+  app.post(api.workers.create.path, requireAuth, requireAdmin, async (req, res) => {
     try {
       const input = api.workers.create.input.parse(req.body);
-      const worker = await storage.createWorker(input);
+      // Добавляем companyId текущего пользователя
+      const user = await storage.getUserById(req.session.userId!);
+      const worker = await storage.createWorker({
+        ...input,
+        companyId: user?.companyId ?? undefined,
+      });
       res.status(201).json(worker);
     } catch (err: any) {
       if (err instanceof z.ZodError) {
@@ -196,7 +267,9 @@ export async function registerRoutes(
   // Tasks
   app.get(api.tasks.list.path, requireAuth, async (req, res) => {
     try {
-      const tasks = await storage.getTasks();
+      // Фильтруем по компании текущего пользователя
+      const user = await storage.getUserById(req.session.userId!);
+      const tasks = await storage.getTasks(user?.companyId ?? undefined);
       console.log("GET /api/tasks - tasks count:", tasks.length);
       tasks.forEach((task, index) => {
         console.log(`Task ${index + 1}: id=${task.id}, title=${task.title}, photoUrl=${task.photoUrl}, isCompleted=${task.isCompleted}`);
@@ -227,7 +300,12 @@ export async function registerRoutes(
       console.log("POST /api/tasks - req.body:", req.body);
       const input = api.tasks.create.input.parse(req.body);
       console.log("POST /api/tasks - parsed input:", input);
-      const task = await storage.createTask(input);
+      // Добавляем companyId текущего пользователя
+      const user = await storage.getUserById(req.session.userId!);
+      const task = await storage.createTask({
+        ...input,
+        companyId: user?.companyId ?? undefined,
+      });
       console.log("POST /api/tasks - created task:", task);
       res.status(201).json(task);
     } catch (err: any) {
@@ -550,10 +628,18 @@ export async function registerRoutes(
         console.log(`Added ${task.price} to user ${task.workerId} balance for completing task ${taskId}`);
       }
 
-      // Отправляем email админу с прикрепленными фото (если есть)
+      // Отправляем email на email компании с прикрепленными фото (если есть)
       const worker = task.workerId ? await storage.getUserById(task.workerId) : null;
       const workerName = worker?.name || worker?.phone || "Неизвестный";
-      sendTaskCompletedEmail(task.title, workerName, taskPhotoUrls.length > 0 ? taskPhotoUrls : (task.photoUrl ? [task.photoUrl] : null));
+      // Получаем email компании для уведомления
+      const currentUser = await storage.getUserById(req.session.userId!);
+      const company = currentUser?.companyId ? await storage.getCompanyById(currentUser.companyId) : null;
+      sendTaskCompletedEmail(
+        task.title,
+        workerName,
+        taskPhotoUrls.length > 0 ? taskPhotoUrls : (task.photoUrl ? [task.photoUrl] : null),
+        company?.email
+      );
 
       res.json(updatedTask);
     } catch (err: any) {
@@ -592,7 +678,9 @@ export async function registerRoutes(
   // Users
   app.get(api.users.list.path, requireAuth, async (req, res) => {
     try {
-      const users = await storage.getAllUsers();
+      // Фильтруем по компании текущего пользователя
+      const currentUser = await storage.getUserById(req.session.userId!);
+      const users = await storage.getAllUsers(currentUser?.companyId ?? undefined);
       res.json(users);
     } catch (err: any) {
       console.error('Error fetching users:', err);
@@ -614,10 +702,13 @@ export async function registerRoutes(
         });
       }
 
+      // Добавляем companyId текущего пользователя
+      const currentUser = await storage.getUserById(req.session.userId!);
       const user = await storage.createUser({
         ...input,
         phone: normalizedPhone,
         isAdmin: false, // Только админ может создавать пользователей, но не может создавать других админов через API
+        companyId: currentUser?.companyId ?? undefined,
       });
 
       res.status(201).json(user);

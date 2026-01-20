@@ -7,36 +7,85 @@
  * но возвращаются как массивы (парсинг при чтении, сериализация при записи)
  */
 
-import { workers, tasks, users, type Worker, type InsertWorker, type Task, type InsertTask, type User, type InsertUser, type UpdateUser } from "@shared/schema";
+import { workers, tasks, users, companies, type Worker, type InsertWorker, type Task, type InsertTask, type User, type InsertUser, type UpdateUser, type Company, type InsertCompany } from "@shared/schema";
 import { db } from "./db";
-import { eq } from "drizzle-orm";
+import { eq, and } from "drizzle-orm";
 
 /** Интерфейс хранилища данных */
 export interface IStorage {
+  // Companies
+  createCompany(company: InsertCompany): Promise<Company>;
+  getCompanyById(id: number): Promise<Company | undefined>;
+  updateCompany(id: number, company: Partial<InsertCompany>): Promise<Company | undefined>;
+
   // Users
   getUserByPhone(phone: string): Promise<User | undefined>;
-  createUser(user: InsertUser): Promise<User>;
+  createUser(user: InsertUser & { companyId?: number }): Promise<User>;
   getUserById(id: number): Promise<User | undefined>;
-  getAllUsers(): Promise<User[]>;
+  getAllUsers(companyId?: number): Promise<User[]>;
   updateUser(id: number, user: UpdateUser): Promise<User | undefined>;
   updateUserBalance(id: number, amount: number): Promise<User | undefined>;
   resetUserBalance(id: number): Promise<User | undefined>;
 
-  getWorkers(): Promise<Worker[]>;
+  // Workers
+  getWorkers(companyId?: number): Promise<Worker[]>;
   getWorker(id: number): Promise<Worker | undefined>;
-  createWorker(worker: InsertWorker): Promise<Worker>;
+  createWorker(worker: InsertWorker & { companyId?: number }): Promise<Worker>;
   updateWorker(id: number, worker: InsertWorker): Promise<Worker | undefined>;
   deleteWorker(id: number): Promise<void>;
 
-  getTasks(): Promise<Task[]>;
+  // Tasks
+  getTasks(companyId?: number): Promise<Task[]>;
   getTask(id: number): Promise<Task | undefined>;
-  createTask(task: InsertTask): Promise<Task>;
+  createTask(task: InsertTask & { companyId?: number }): Promise<Task>;
   updateTask(id: number, task: Partial<InsertTask>): Promise<Task | undefined>;
   deleteTask(id: number): Promise<void>;
 }
 
 /** Реализация хранилища с MySQL через Drizzle ORM */
 export class DatabaseStorage implements IStorage {
+  // ===================== COMPANIES =====================
+
+  /**
+   * Создание новой компании
+   * @param company - Данные компании (name обязателен)
+   * @returns Созданная компания с id
+   */
+  async createCompany(company: InsertCompany): Promise<Company> {
+    const [result] = await db.insert(companies).values({
+      ...company,
+      createdAt: Math.floor(Date.now() / 1000),
+    });
+    const insertId = (result as any).insertId;
+    const [created] = await db.select().from(companies).where(eq(companies.id, insertId));
+    if (!created) throw new Error("Failed to create company");
+    return created;
+  }
+
+  /**
+   * Получение компании по ID
+   * @param id - ID компании
+   * @returns Компания или undefined если не найдена
+   */
+  async getCompanyById(id: number): Promise<Company | undefined> {
+    const [company] = await db.select().from(companies).where(eq(companies.id, id));
+    return company || undefined;
+  }
+
+  /**
+   * Обновление данных компании
+   * @param id - ID компании
+   * @param company - Данные для обновления
+   * @returns Обновлённая компания или undefined
+   */
+  async updateCompany(id: number, company: Partial<InsertCompany>): Promise<Company | undefined> {
+    await db.update(companies).set(company).where(eq(companies.id, id));
+    const [updated] = await db.select().from(companies).where(eq(companies.id, id));
+    return updated || undefined;
+  }
+
+  // ===================== USERS =====================
+
   /**
    * Поиск пользователя по номеру телефона
    * @param phone - Номер телефона (будет нормализован: убраны пробелы и дефисы)
@@ -50,16 +99,17 @@ export class DatabaseStorage implements IStorage {
 
   /**
    * Создание нового пользователя
-   * @param insertUser - Данные пользователя (phone обязателен)
+   * @param insertUser - Данные пользователя (phone обязателен, companyId опционален)
    * @returns Созданный пользователь с id
    */
-  async createUser(insertUser: InsertUser): Promise<User> {
+  async createUser(insertUser: InsertUser & { companyId?: number }): Promise<User> {
     // Нормализуем номер телефона
     const normalizedPhone = insertUser.phone.replace(/\s+/g, "").replace(/-/g, "");
     const [result] = await db.insert(users).values({
       ...insertUser,
       phone: normalizedPhone,
       createdAt: Math.floor(Date.now() / 1000),
+      companyId: insertUser.companyId ?? null,
     });
     const insertId = (result as any).insertId;
     const [user] = await db.select().from(users).where(eq(users.id, insertId));
@@ -72,7 +122,10 @@ export class DatabaseStorage implements IStorage {
     return user || undefined;
   }
 
-  async getAllUsers(): Promise<User[]> {
+  async getAllUsers(companyId?: number): Promise<User[]> {
+    if (companyId) {
+      return await db.select().from(users).where(eq(users.companyId, companyId));
+    }
     return await db.select().from(users);
   }
 
@@ -115,7 +168,12 @@ export class DatabaseStorage implements IStorage {
     return user || undefined;
   }
 
-  async getWorkers(): Promise<Worker[]> {
+  // ===================== WORKERS =====================
+
+  async getWorkers(companyId?: number): Promise<Worker[]> {
+    if (companyId) {
+      return await db.select().from(workers).where(eq(workers.companyId, companyId));
+    }
     return await db.select().from(workers);
   }
 
@@ -124,8 +182,11 @@ export class DatabaseStorage implements IStorage {
     return worker || undefined;
   }
 
-  async createWorker(insertWorker: InsertWorker): Promise<Worker> {
-    const [result] = await db.insert(workers).values(insertWorker);
+  async createWorker(insertWorker: InsertWorker & { companyId?: number }): Promise<Worker> {
+    const [result] = await db.insert(workers).values({
+      ...insertWorker,
+      companyId: insertWorker.companyId ?? null,
+    });
     const insertId = (result as any).insertId;
     const [worker] = await db.select().from(workers).where(eq(workers.id, insertId));
     return worker;
@@ -141,14 +202,17 @@ export class DatabaseStorage implements IStorage {
     await db.delete(workers).where(eq(workers.id, id));
   }
 
+  // ===================== TASKS =====================
+
   /**
    * Получение всех задач
+   * @param companyId - ID компании для фильтрации (опционально)
    * @returns Массив задач с распарсенными weekDays и photoUrls
    * @note weekDays возвращается как number[] (0=Вс, 1=Пн, ..., 6=Сб)
    * @note photoUrls возвращается как string[] (пустой массив если нет фото)
    */
-  async getTasks(): Promise<Task[]> {
-    const result = await db.select({
+  async getTasks(companyId?: number): Promise<Task[]> {
+    const query = db.select({
       id: tasks.id,
       title: tasks.title,
       workerId: tasks.workerId,
@@ -163,7 +227,13 @@ export class DatabaseStorage implements IStorage {
       price: tasks.price,
       category: tasks.category,
       description: tasks.description,
+      companyId: tasks.companyId,
     }).from(tasks);
+
+    const result = companyId
+      ? await query.where(eq(tasks.companyId, companyId))
+      : await query;
+
     // Парсим weekDays и photoUrls из JSON строки в массив
     return result.map(task => ({
       ...task,
@@ -188,6 +258,7 @@ export class DatabaseStorage implements IStorage {
       price: tasks.price,
       category: tasks.category,
       description: tasks.description,
+      companyId: tasks.companyId,
     }).from(tasks).where(eq(tasks.id, id));
     if (!task) return undefined;
     return {
@@ -199,11 +270,11 @@ export class DatabaseStorage implements IStorage {
 
   /**
    * Создание новой задачи
-   * @param insertTask - Данные задачи
+   * @param insertTask - Данные задачи (companyId опционален)
    * @returns Созданная задача с id
    * @note weekDays и photoUrls автоматически сериализуются в JSON для хранения
    */
-  async createTask(insertTask: InsertTask): Promise<Task> {
+  async createTask(insertTask: InsertTask & { companyId?: number }): Promise<Task> {
     // Сериализуем weekDays и photoUrls в JSON строку для хранения в БД
     const taskData = {
       ...insertTask,
@@ -215,6 +286,7 @@ export class DatabaseStorage implements IStorage {
       category: insertTask.category ?? null,
       description: insertTask.description ?? null,
       examplePhotoUrl: insertTask.examplePhotoUrl ?? null,
+      companyId: insertTask.companyId ?? null,
     };
     const [result] = await db.insert(tasks).values(taskData as any);
     const insertId = (result as any).insertId;
@@ -233,6 +305,7 @@ export class DatabaseStorage implements IStorage {
       price: tasks.price,
       category: tasks.category,
       description: tasks.description,
+      companyId: tasks.companyId,
     }).from(tasks).where(eq(tasks.id, insertId));
     return {
       ...task,
@@ -285,6 +358,7 @@ export class DatabaseStorage implements IStorage {
       price: tasks.price,
       category: tasks.category,
       description: tasks.description,
+      companyId: tasks.companyId,
     }).from(tasks).where(eq(tasks.id, id));
     if (!task) return undefined;
     return {

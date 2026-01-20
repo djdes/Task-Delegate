@@ -216,6 +216,17 @@ export default function Login() {
             >
               {isLoading ? "Вход..." : "Войти"}
             </button>
+
+            {/* Кнопка регистрации новой компании */}
+            <div className="text-center pt-4">
+              <button
+                type="button"
+                onClick={() => setLocation("/register")}
+                className="text-xs text-muted-foreground/60 hover:text-muted-foreground transition-colors"
+              >
+                Новый администратор
+              </button>
+            </div>
           </form>
         </Form>
       </div>

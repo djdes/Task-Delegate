@@ -2,6 +2,14 @@ import { mysqlTable, varchar, int, boolean, text } from "drizzle-orm/mysql-core"
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
+// Таблица компаний
+export const companies = mysqlTable("companies", {
+  id: int("id").primaryKey().autoincrement(),
+  name: varchar("name", { length: 255 }).notNull(),
+  email: varchar("email", { length: 255 }), // Email для уведомлений о выполненных задачах
+  createdAt: int("created_at").notNull().default(0),
+});
+
 export const users = mysqlTable("users", {
   id: int("id").primaryKey().autoincrement(),
   phone: varchar("phone", { length: 20 }).notNull().unique(),
@@ -9,11 +17,13 @@ export const users = mysqlTable("users", {
   isAdmin: boolean("is_admin").notNull().default(false),
   createdAt: int("created_at").notNull().default(0),
   bonusBalance: int("bonus_balance").notNull().default(0), // Баланс дополнительной премии
+  companyId: int("company_id"), // FK на companies
 });
 
 export const workers = mysqlTable("workers", {
   id: int("id").primaryKey().autoincrement(),
   name: varchar("name", { length: 255 }).notNull(),
+  companyId: int("company_id"), // FK на companies
 });
 
 export const tasks = mysqlTable("tasks", {
@@ -31,6 +41,7 @@ export const tasks = mysqlTable("tasks", {
   price: int("price").notNull().default(0), // Стоимость выполнения задачи в рублях
   category: varchar("category", { length: 100 }), // Категория задачи (уборка, готовка и т.д.)
   description: text("description"), // Описание задачи
+  companyId: int("company_id"), // FK на companies
 });
 
 export const insertUserSchema = z.object({
@@ -88,6 +99,32 @@ export const insertTaskSchema = createInsertSchema(tasks).pick({
   category: z.string().max(100).nullable().optional(), // категория задачи
   description: z.string().nullable().optional(), // описание задачи
 });
+
+// Схема валидации для регистрации компании
+const phoneValidation = z.string().min(1, "Номер телефона обязателен").refine(
+  (val) => {
+    const normalized = val.replace(/\s+/g, "").replace(/-/g, "");
+    return /^\+7\d{9,10}$/.test(normalized);
+  },
+  "Неверный формат номера телефона (формат: +7XXXXXXXXX или +7XXXXXXXXXX)"
+);
+
+export const registerCompanySchema = z.object({
+  phone: phoneValidation,
+  companyName: z.string().min(1, "Название компании обязательно"),
+  email: z.string().email("Неверный формат email"),
+  adminName: z.string().optional(),
+});
+
+export const insertCompanySchema = z.object({
+  name: z.string().min(1, "Название компании обязательно"),
+  email: z.string().email("Неверный формат email").optional(),
+});
+
+// Types
+export type Company = typeof companies.$inferSelect;
+export type InsertCompany = z.infer<typeof insertCompanySchema>;
+export type RegisterCompanyInput = z.infer<typeof registerCompanySchema>;
 
 export type User = typeof users.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;
