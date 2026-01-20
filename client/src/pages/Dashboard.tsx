@@ -538,6 +538,14 @@ export default function Dashboard() {
               className="bottom-nav-item"
               onClick={() => setLocation("/admin/users")}
             >
+              <User className="w-5 h-5" />
+              <span>Сотрудники</span>
+            </button>
+
+            <button
+              className="bottom-nav-item"
+              onClick={() => setLocation("/admin/settings")}
+            >
               <Settings className="w-5 h-5" />
               <span>Настройки</span>
             </button>

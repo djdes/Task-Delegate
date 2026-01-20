@@ -14,6 +14,7 @@ import EditTask from "@/pages/EditTask";
 import CreateWorker from "@/pages/CreateWorker";
 import EditWorker from "@/pages/EditWorker";
 import AdminUsers from "@/pages/AdminUsers";
+import CompanySettings from "@/pages/CompanySettings";
 import NotFound from "@/pages/not-found";
 
 // Disable browser's automatic scroll restoration
@@ -52,6 +53,7 @@ function Router() {
         <Route path="/register" component={Register} />
         <Route path="/dashboard" component={Dashboard} />
         <Route path="/admin/users" component={AdminUsers} />
+        <Route path="/admin/settings" component={CompanySettings} />
         <Route path="/tasks/new" component={CreateTask} />
         <Route path="/tasks/:id/edit" component={EditTask} />
         <Route path="/workers/new" component={CreateWorker} />

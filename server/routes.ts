@@ -186,6 +186,54 @@ export async function registerRoutes(
     }
   });
 
+  // Обновить компанию (только админ)
+  app.put("/api/companies/me", requireAuth, requireAdmin, async (req, res) => {
+    try {
+      const user = await storage.getUserById(req.session.userId!);
+      if (!user || !user.companyId) {
+        return res.status(400).json({ message: 'Компания не найдена' });
+      }
+
+      const { name, email } = req.body;
+
+      if (!name || name.trim() === '') {
+        return res.status(400).json({ message: 'Название компании обязательно' });
+      }
+
+      const company = await storage.updateCompany(user.companyId, {
+        name: name.trim(),
+        email: email?.trim() || null,
+      });
+
+      res.json(company);
+    } catch (err: any) {
+      console.error('Error updating company:', err);
+      res.status(500).json({ message: 'Ошибка обновления компании', error: err.message });
+    }
+  });
+
+  // Обновить имя текущего пользователя (для админа - собственное имя)
+  app.put("/api/auth/me", requireAuth, async (req, res) => {
+    try {
+      const { name } = req.body;
+      const user = await storage.getUserById(req.session.userId!);
+
+      if (!user) {
+        return res.status(404).json({ message: 'Пользователь не найден' });
+      }
+
+      const updated = await storage.updateUser(user.id, {
+        phone: user.phone,
+        name: name?.trim() || null,
+      });
+
+      res.json(updated);
+    } catch (err: any) {
+      console.error('Error updating user:', err);
+      res.status(500).json({ message: 'Ошибка обновления', error: err.message });
+    }
+  });
+
   // Workers
   app.get(api.workers.list.path, requireAuth, async (req, res) => {
     try {
