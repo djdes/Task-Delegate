@@ -48,7 +48,7 @@ export const api = {
     create: {
       method: 'POST' as const,
       path: '/api/users',
-      input: insertUserSchema,
+      input: insertUserSchema.pick({ phone: true, name: true }),
       responses: {
         201: z.custom<typeof users.$inferSelect>(),
         400: errorSchemas.validation,

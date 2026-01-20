@@ -738,7 +738,9 @@ export async function registerRoutes(
 
   app.post(api.users.create.path, requireAuth, requireAdmin, async (req, res) => {
     try {
+      console.log("Create user request body:", req.body);
       const input = api.users.create.input.parse(req.body);
+      console.log("Parsed input:", input);
 
       // Проверяем, существует ли пользователь
       const normalizedPhone = input.phone.replace(/\s+/g, "").replace(/-/g, "");
@@ -762,6 +764,7 @@ export async function registerRoutes(
       res.status(201).json(user);
     } catch (err: any) {
       if (err instanceof z.ZodError) {
+        console.log("Zod validation error:", err.errors);
         return res.status(400).json({
           message: err.errors[0].message,
           field: err.errors[0].path.join('.'),

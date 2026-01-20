@@ -71,6 +71,26 @@ export default function Dashboard() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isBonusInfoOpen, setIsBonusInfoOpen] = useState(false);
 
+  // Все хуки должны быть до любых условных операций
+  const deleteTask = useDeleteTask();
+  const completeTask = useCompleteTask();
+  const uncompleteTask = useUncompleteTask();
+
+  useEffect(() => {
+    if (selectedTask) {
+      const updated = tasks.find(t => t.id === selectedTask.id);
+      if (updated) {
+        setSelectedTask(updated);
+      }
+    }
+  }, [tasks, selectedTask]);
+
+  useEffect(() => {
+    if (!authLoading && !user) {
+      setLocation("/");
+    }
+  }, [user, authLoading, setLocation]);
+
   const handleRefresh = async () => {
     setIsRefreshing(true);
     await queryClient.invalidateQueries({ queryKey: ["tasks"] });
@@ -83,19 +103,6 @@ export default function Dashboard() {
       .map(task => (task as any).category)
       .filter((c): c is string => c !== null && c !== undefined && c.trim() !== "")
   )).sort();
-
-  useEffect(() => {
-    if (selectedTask) {
-      const updated = tasks.find(t => t.id === selectedTask.id);
-      if (updated) {
-        setSelectedTask(updated);
-      }
-    }
-  }, [tasks, selectedTask]);
-
-  const deleteTask = useDeleteTask();
-  const completeTask = useCompleteTask();
-  const uncompleteTask = useUncompleteTask();
 
   const getUserName = (userId: number | null) => {
     if (!userId) return "Не назначен";
@@ -199,12 +206,6 @@ export default function Dashboard() {
     setSelectedTask(updatedTask);
     queryClient.invalidateQueries({ queryKey: ["tasks"] });
   };
-
-  useEffect(() => {
-    if (!authLoading && !user) {
-      setLocation("/");
-    }
-  }, [user, authLoading, setLocation]);
 
   // Loading state
   if (authLoading || loadingTasks) {

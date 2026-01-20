@@ -18,6 +18,7 @@ import { insertUserSchema, updateUserSchema } from "@shared/schema";
 import { z } from "zod";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api, buildUrl } from "@shared/routes";
+import { useToast } from "@/hooks/use-toast";
 
 const formSchema = insertUserSchema.pick({ phone: true, name: true });
 const editFormSchema = updateUserSchema;
@@ -29,6 +30,7 @@ export default function AdminUsers() {
   const [, setLocation] = useLocation();
   const { user, isLoading: authLoading } = useAuth();
   const queryClient = useQueryClient();
+  const { toast } = useToast();
   const [editingUserId, setEditingUserId] = useState<number | null>(null);
   const [editPhone, setEditPhone] = useState("");
   const [editName, setEditName] = useState("");
@@ -63,8 +65,13 @@ export default function AdminUsers() {
       }
       return response.json();
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["users"] });
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["users"] });
+      form.reset({ phone: "+7", name: "" });
+      toast({ title: "Пользователь создан" });
+    },
+    onError: (error: Error) => {
+      toast({ title: "Ошибка", description: error.message, variant: "destructive" });
     },
   });
 
@@ -83,9 +90,13 @@ export default function AdminUsers() {
       }
       return response.json();
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["users"] });
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["users"] });
       setEditingUserId(null);
+      toast({ title: "Пользователь обновлён" });
+    },
+    onError: (error: Error) => {
+      toast({ title: "Ошибка", description: error.message, variant: "destructive" });
     },
   });
 
@@ -102,8 +113,12 @@ export default function AdminUsers() {
       }
       return response.json();
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["users"] });
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["users"] });
+      toast({ title: "Баланс сброшен" });
+    },
+    onError: (error: Error) => {
+      toast({ title: "Ошибка", description: error.message, variant: "destructive" });
     },
   });
 
@@ -120,8 +135,12 @@ export default function AdminUsers() {
       }
       return response.json();
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["users"] });
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["users"] });
+      toast({ title: "Пользователь удалён" });
+    },
+    onError: (error: Error) => {
+      toast({ title: "Ошибка", description: error.message, variant: "destructive" });
     },
   });
 
@@ -134,11 +153,7 @@ export default function AdminUsers() {
   });
 
   const onSubmit = (values: FormValues) => {
-    createUserMutation.mutate(values, {
-      onSuccess: () => {
-        form.reset({ phone: "+7", name: "" });
-      },
-    });
+    createUserMutation.mutate(values);
   };
 
   // Проверка загрузки авторизации
