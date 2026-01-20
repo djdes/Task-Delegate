@@ -40,8 +40,11 @@ const authLimiter = rateLimit({
   keyGenerator: (req) => {
     // Используем IP + phone для более точного ограничения
     const phone = req.body?.phone || "";
-    return `${req.ip}-${phone}`;
+    // Нормализуем IPv6 адреса
+    const ip = req.ip?.replace(/^::ffff:/, "") || "unknown";
+    return `${ip}-${phone}`;
   },
+  validate: false,
 });
 
 // Применяем общий rate limiter

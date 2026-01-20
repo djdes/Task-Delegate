@@ -122,7 +122,7 @@ export default function AdminUsers() {
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      phone: "",
+      phone: "+7",
       name: "",
     },
   });
@@ -130,7 +130,7 @@ export default function AdminUsers() {
   const onSubmit = (values: FormValues) => {
     createUserMutation.mutate(values, {
       onSuccess: () => {
-        form.reset();
+        form.reset({ phone: "+7", name: "" });
       },
     });
   };
@@ -193,9 +193,46 @@ export default function AdminUsers() {
                       <FormControl>
                         <Input
                           type="tel"
-                          placeholder="+79263740794"
+                          placeholder="xxx xxx xx xx"
                           className="things-input"
-                          {...field}
+                          value={field.value}
+                          onChange={(e) => {
+                            let value = e.target.value;
+                            // Убираем +7 в начале если есть
+                            let cleaned = value.replace(/^\+?7?/, "");
+                            // Оставляем только цифры
+                            let digits = cleaned.replace(/\D/g, "");
+                            // Если первая цифра 7 (ввод начали с 7 или вставили номер типа 79991234567)
+                            if (digits.startsWith("7") && digits.length > 1) {
+                              digits = digits.slice(1);
+                            }
+                            // Ограничиваем до 10 цифр
+                            const limitedDigits = digits.slice(0, 10);
+                            field.onChange("+7" + limitedDigits);
+                          }}
+                          onKeyDown={(e) => {
+                            if (e.key === "Backspace") {
+                              const cursorPos = (e.target as HTMLInputElement).selectionStart || 0;
+                              if (cursorPos <= 2) {
+                                e.preventDefault();
+                                return;
+                              }
+                            }
+                            if (e.key === "Delete") {
+                              const cursorPos = (e.target as HTMLInputElement).selectionStart || 0;
+                              if (cursorPos < 2) {
+                                e.preventDefault();
+                                return;
+                              }
+                            }
+                          }}
+                          onFocus={(e) => {
+                            if (field.value === "+7" || field.value === "") {
+                              setTimeout(() => {
+                                e.target.setSelectionRange(2, 2);
+                              }, 0);
+                            }
+                          }}
                         />
                       </FormControl>
                       <FormMessage />
@@ -253,9 +290,33 @@ export default function AdminUsers() {
                         <div>
                           <label className="text-xs text-muted-foreground">Телефон</label>
                           <Input
+                            type="tel"
                             value={editPhone}
-                            onChange={(e) => setEditPhone(e.target.value)}
-                            placeholder="+79263740794"
+                            onChange={(e) => {
+                              let value = e.target.value;
+                              let cleaned = value.replace(/^\+?7?/, "");
+                              let digits = cleaned.replace(/\D/g, "");
+                              if (digits.startsWith("7") && digits.length > 1) {
+                                digits = digits.slice(1);
+                              }
+                              const limitedDigits = digits.slice(0, 10);
+                              setEditPhone("+7" + limitedDigits);
+                            }}
+                            onKeyDown={(e) => {
+                              if (e.key === "Backspace") {
+                                const cursorPos = (e.target as HTMLInputElement).selectionStart || 0;
+                                if (cursorPos <= 2) {
+                                  e.preventDefault();
+                                }
+                              }
+                              if (e.key === "Delete") {
+                                const cursorPos = (e.target as HTMLInputElement).selectionStart || 0;
+                                if (cursorPos < 2) {
+                                  e.preventDefault();
+                                }
+                              }
+                            }}
+                            placeholder="xxx xxx xx xx"
                             className="mt-1"
                           />
                         </div>
