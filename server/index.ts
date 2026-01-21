@@ -28,6 +28,7 @@ const generalLimiter = rateLimit({
   legacyHeaders: false,
   message: { message: "Слишком много запросов, попробуйте позже" },
   skip: (req) => req.path === "/api/health", // Пропускаем health check
+  validate: false, // Отключаем валидацию для IPv6
 });
 
 // Rate limiting - строгий лимит для auth endpoints
