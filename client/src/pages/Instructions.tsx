@@ -1,5 +1,5 @@
 import { Link } from "wouter";
-import { ArrowLeft, Building2, UserPlus, CheckCircle2, ArrowRight, Smartphone, ListTodo, Camera, Coins } from "lucide-react";
+import { ArrowLeft, Building2, UserPlus, ArrowRight, Smartphone, ListTodo, Camera, Coins } from "lucide-react";
 
 export default function Instructions() {
   return (
@@ -114,8 +114,8 @@ export default function Instructions() {
                   <div className="w-0.5 flex-1 bg-border mt-2" />
                 </div>
                 <div className="flex-1 pb-6">
-                  <h3 className="font-semibold text-foreground mb-1">Регистрация</h3>
-                  <p className="text-sm text-muted-foreground">Укажите свой номер телефона, имя и номер телефона администратора вашей компании.</p>
+                  <h3 className="font-semibold text-foreground mb-1">Подключение к компании</h3>
+                  <p className="text-sm text-muted-foreground">Зарегистрируйтесь самостоятельно, указав телефон администратора, или получите приглашение от компании — тогда задачи уже будут готовы для вас.</p>
                 </div>
               </div>
 
