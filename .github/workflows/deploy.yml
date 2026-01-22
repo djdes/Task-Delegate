@@ -22,13 +22,8 @@ jobs:
             cd ${{ secrets.DEPLOY_PATH }}
             git pull origin main
             npm install
-            npm run db:push
-            npm run add-companies
-            npm run update-tasks
+            # ВАЖНО: db:push убран из автодеплоя - он может удалять данные!
+            # Миграции БД выполнять ВРУЧНУЮ: npm run add-companies, npm run update-tasks
             npm run build
             pm2 restart all
             pm2 status
-            # Обновляем cron для сброса задач (каждый день в 6:00)
-            (crontab -l 2>/dev/null | grep -v "reset-tasks" ; echo "0 6 * * * cd ${{ secrets.DEPLOY_PATH }} && /var/www/tasks/data/.nvm/versions/node/v24.12.0/bin/npm run reset-tasks >> /var/log/reset-tasks.log 2>&1") | crontab -
-            echo "Cron updated:"
-            crontab -l | grep reset-tasks
