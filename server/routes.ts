@@ -185,13 +185,8 @@ export async function registerRoutes(
       const normalizedPhone = input.phone.replace(/\s+/g, "").replace(/-/g, "");
       const normalizedAdminPhone = input.adminPhone.replace(/\s+/g, "").replace(/-/g, "");
 
-      console.log("Register user - input:", input);
-      console.log("Register user - normalizedPhone:", normalizedPhone);
-      console.log("Register user - normalizedAdminPhone:", normalizedAdminPhone);
-
       // Проверяем, существует ли пользователь с таким телефоном
       const existingUser = await storage.getUserByPhone(normalizedPhone);
-      console.log("Register user - existingUser:", existingUser);
       if (existingUser) {
         return res.status(400).json({
           message: "Пользователь с таким номером уже существует",
@@ -201,7 +196,6 @@ export async function registerRoutes(
 
       // Ищем администратора по телефону
       const admin = await storage.getUserByPhone(normalizedAdminPhone);
-      console.log("Register user - admin found:", admin);
       if (!admin) {
         return res.status(400).json({
           message: "Администратор с таким номером не найден",

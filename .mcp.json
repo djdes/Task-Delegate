@@ -1,0 +1,14 @@
+{
+  "mcpServers": {
+    "ssh-tasks": {
+      "command": "npx",
+      "args": ["ssh-mcp"],
+      "env": {
+        "SSH_HOST": "tasks.magday.ru",
+        "SSH_PORT": "50222",
+        "SSH_USER": "tasks",
+        "SSH_KEY_PATH": "C:\\Users\\djdes\\.ssh\\magday_deploy"
+      }
+    }
+  }
+}
