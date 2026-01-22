@@ -13,17 +13,19 @@ export default function Register() {
 
       {/* Header */}
       <div className="relative pt-12 pb-10 px-6">
-        <Link href="/" className="inline-flex items-center gap-2 text-white/80 hover:text-white transition-colors mb-8">
-          <ArrowLeft className="w-5 h-5" />
-          <span>Назад</span>
-        </Link>
+        <div className="max-w-md mx-auto">
+          <Link href="/" className="inline-flex items-center gap-2 text-white/80 hover:text-white transition-colors mb-8">
+            <ArrowLeft className="w-5 h-5" />
+            <span>Назад</span>
+          </Link>
 
-        <h1 className="text-3xl font-bold text-white mb-3">
-          Регистрация
-        </h1>
-        <p className="text-white/70">
-          Выберите тип регистрации
-        </p>
+          <h1 className="text-3xl font-bold text-white mb-3">
+            Регистрация
+          </h1>
+          <p className="text-white/70">
+            Выберите тип регистрации
+          </p>
+        </div>
       </div>
 
       {/* Options Card */}
