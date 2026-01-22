@@ -90,11 +90,17 @@ export default function Login() {
         window.location.href = "/dashboard";
       }, 100);
     } catch (error: any) {
-      toast({
-        title: "Ошибка",
-        description: error.message || "Пользователь с таким номером не найден",
-        variant: "destructive",
-      });
+      // Если пользователь не найден - перенаправляем на регистрацию с номером
+      const phone = form.getValues("phone");
+      if (phone && phone.length > 2) {
+        setLocation(`/register?phone=${encodeURIComponent(phone)}`);
+      } else {
+        toast({
+          title: "Ошибка",
+          description: error.message || "Ошибка входа",
+          variant: "destructive",
+        });
+      }
       setIsLoading(false);
     }
   };

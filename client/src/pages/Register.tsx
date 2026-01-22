@@ -1,7 +1,12 @@
-import { Link } from "wouter";
+import { Link, useSearch } from "wouter";
 import { ArrowLeft, Building2, UserPlus, ChevronRight } from "lucide-react";
 
 export default function Register() {
+  // Получаем номер телефона из URL параметра
+  const searchString = useSearch();
+  const params = new URLSearchParams(searchString);
+  const phone = params.get("phone") || "";
+
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-br from-primary via-primary to-primary/90">
       {/* Decorative background elements */}
@@ -32,7 +37,7 @@ export default function Register() {
       <div className="relative flex-1 bg-background rounded-t-[40px] px-6 pt-10 pb-10 shadow-[0_-10px_40px_rgba(0,0,0,0.1)]">
         <div className="max-w-md mx-auto flex flex-col gap-6">
           {/* Create Company */}
-          <Link href="/register/company">
+          <Link href={phone ? `/register/company?phone=${encodeURIComponent(phone)}` : "/register/company"}>
             <div className="p-5 rounded-2xl border border-border bg-card hover:border-primary/50 hover:shadow-lg hover:shadow-primary/10 transition-all duration-300 cursor-pointer group">
               <div className="flex items-center gap-4">
                 <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center group-hover:from-primary/30 group-hover:to-primary/20 transition-all duration-300">
@@ -52,7 +57,7 @@ export default function Register() {
           </Link>
 
           {/* Join Company */}
-          <Link href="/register/user">
+          <Link href={phone ? `/register/user?phone=${encodeURIComponent(phone)}` : "/register/user"}>
             <div className="p-5 rounded-2xl border border-border bg-card hover:border-primary/50 hover:shadow-lg hover:shadow-primary/10 transition-all duration-300 cursor-pointer group">
               <div className="flex items-center gap-4">
                 <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-emerald-500/20 to-emerald-500/10 flex items-center justify-center group-hover:from-emerald-500/30 group-hover:to-emerald-500/20 transition-all duration-300">

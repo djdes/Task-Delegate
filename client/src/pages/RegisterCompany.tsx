@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useLocation, Link } from "wouter";
+import { useLocation, Link, useSearch } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ArrowLeft, Building2 } from "lucide-react";
@@ -26,10 +26,15 @@ export default function Register() {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
 
+  // Получаем номер телефона из URL параметра
+  const searchString = useSearch();
+  const params = new URLSearchParams(searchString);
+  const phoneFromUrl = params.get("phone") || "+7";
+
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      phone: "+7",
+      phone: phoneFromUrl,
       companyName: "",
       email: "",
       adminName: "",
