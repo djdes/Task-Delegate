@@ -28,7 +28,7 @@ const generalLimiter = rateLimit({
   legacyHeaders: false,
   message: { message: "Слишком много запросов, попробуйте позже" },
   skip: (req) => req.path === "/api/health", // Пропускаем health check
-  validate: false, // Отключаем валидацию для IPv6
+  validate: { xForwardedForHeader: false, trustProxy: false },
 });
 
 // Rate limiting - строгий лимит для auth endpoints
@@ -38,14 +38,7 @@ const authLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
   message: { message: "Слишком много попыток входа, попробуйте через 15 минут" },
-  keyGenerator: (req) => {
-    // Используем IP + phone для более точного ограничения
-    const phone = req.body?.phone || "";
-    // Нормализуем IPv6 адреса
-    const ip = req.ip?.replace(/^::ffff:/, "") || "unknown";
-    return `${ip}-${phone}`;
-  },
-  validate: false,
+  validate: { xForwardedForHeader: false, trustProxy: false },
 });
 
 // Применяем общий rate limiter
