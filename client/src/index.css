@@ -85,29 +85,32 @@
     box-sizing: border-box;
   }
 
-  html {
+  html, body {
     margin: 0;
     padding: 0;
-    scroll-behavior: auto;
-    overflow-x: hidden;
-    /* Ensure html is the scroll container, not body */
     height: 100%;
+    overflow: hidden;
+    position: fixed;
+    width: 100%;
+    @apply bg-background;
   }
 
   body {
-    margin: 0;
-    padding: 0;
-    min-height: 100%;
-    @apply bg-background text-foreground antialiased;
+    @apply text-foreground antialiased;
     font-family: var(--font-body);
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
 
   #root {
-    margin: 0;
-    padding: 0;
-    min-height: 100%;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    overflow-y: auto;
+    overflow-x: hidden;
+    -webkit-overflow-scrolling: touch;
   }
 
   h1, h2, h3, h4, h5, h6 {

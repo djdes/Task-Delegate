@@ -29,40 +29,20 @@ if ('scrollRestoration' in history) {
 function ScrollToTop() {
   const [location] = useLocation();
   const prevLocation = useRef(location);
-  const topRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     // Skip if location hasn't changed
     if (prevLocation.current === location) return;
     prevLocation.current = location;
 
-    // iOS Safari hack: use scrollIntoView on a top element
-    if (topRef.current) {
-      topRef.current.scrollIntoView();
+    // Scroll the #root container (our main scroll container)
+    const root = document.getElementById('root');
+    if (root) {
+      root.scrollTop = 0;
     }
-
-    // Fallback methods
-    window.scrollTo(0, 0);
-    document.documentElement.scrollTop = 0;
-    document.body.scrollTop = 0;
-
-    // Delayed attempts for iOS
-    const timeouts = [0, 10, 50, 100, 200].map(delay =>
-      setTimeout(() => {
-        if (topRef.current) {
-          topRef.current.scrollIntoView();
-        }
-        window.scrollTo(0, 0);
-        document.documentElement.scrollTop = 0;
-        document.body.scrollTop = 0;
-      }, delay)
-    );
-
-    return () => timeouts.forEach(clearTimeout);
   }, [location]);
 
-  // Render an invisible element at the very top
-  return <div ref={topRef} style={{ position: 'absolute', top: 0, left: 0, width: 0, height: 0 }} />;
+  return null;
 }
 
 function Router() {
