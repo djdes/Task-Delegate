@@ -709,6 +709,7 @@ export async function registerRoutes(
   app.post(api.tasks.complete.path, requireAuth, async (req, res) => {
     try {
       const taskId = Number(req.params.id);
+      const { comment } = req.body || {};
       const task = await storage.getTask(taskId);
       if (!task) {
         return res.status(404).json({ message: "Задача не найдена" });
@@ -757,7 +758,8 @@ export async function registerRoutes(
         task.title,
         workerName,
         taskPhotoUrls.length > 0 ? taskPhotoUrls : (task.photoUrl ? [task.photoUrl] : null),
-        company?.email
+        company?.email,
+        comment
       );
 
       res.json(updatedTask);

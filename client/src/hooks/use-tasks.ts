@@ -127,10 +127,12 @@ export function useCompleteTask() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (id: number) => {
+    mutationFn: async ({ id, comment }: { id: number; comment?: string }) => {
       const res = await fetch(buildUrl(api.tasks.complete.path, { id }), {
         method: api.tasks.complete.method,
         credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ comment }),
       });
       if (!res.ok) {
         const error = await res.json().catch(() => ({}));

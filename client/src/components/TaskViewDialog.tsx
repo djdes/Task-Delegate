@@ -11,14 +11,15 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import { Upload, X, CheckCircle2, Trash2, RotateCcw, Camera, Check, Coins, ImageIcon } from "lucide-react";
+import { Upload, X, CheckCircle2, Trash2, RotateCcw, Camera, Check, Coins, ImageIcon, MessageSquare } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
 import type { Task } from "@shared/schema";
 
 interface TaskViewDialogProps {
   task: Task | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onComplete: () => void;
+  onComplete: (comment?: string) => void;
   canComplete: boolean;
   onTaskUpdate?: (updatedTask: Task) => void;
 }
@@ -37,6 +38,7 @@ export function TaskViewDialog({
   const [isPhotoFullscreen, setIsPhotoFullscreen] = useState(false);
   const [fullscreenPhotoIndex, setFullscreenPhotoIndex] = useState(0);
   const [isExamplePhotoFullscreen, setIsExamplePhotoFullscreen] = useState(false);
+  const [userComment, setUserComment] = useState<string>("");
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -237,7 +239,8 @@ export function TaskViewDialog({
       });
       return;
     }
-    onComplete();
+    onComplete(userComment || undefined);
+    setUserComment("");
   };
 
   if (!currentTask) return null;
@@ -366,6 +369,23 @@ export function TaskViewDialog({
                   </label>
                 </div>
               )}
+            </div>
+          )}
+
+          {/* User comment field */}
+          {canComplete && !currentTask.isCompleted && (
+            <div className="space-y-2">
+              <div className="flex items-center gap-2">
+                <MessageSquare className="w-4 h-4 text-primary" />
+                <span className="text-sm font-semibold text-foreground">Комментарий</span>
+                <span className="text-xs text-muted-foreground">(необязательно)</span>
+              </div>
+              <Textarea
+                value={userComment}
+                onChange={(e) => setUserComment(e.target.value)}
+                placeholder="Добавьте комментарий к выполненной задаче..."
+                className="min-h-[80px] resize-none"
+              />
             </div>
           )}
 

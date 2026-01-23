@@ -170,7 +170,7 @@ export default function Dashboard() {
     setIsTaskDialogOpen(true);
   };
 
-  const toggleTaskComplete = (taskId: number, e?: React.MouseEvent) => {
+  const toggleTaskComplete = (taskId: number, e?: React.MouseEvent, comment?: string) => {
     if (e) {
       e.stopPropagation();
     }
@@ -187,12 +187,16 @@ export default function Dashboard() {
       return;
     }
 
-    completeTask.mutate(taskId);
+    completeTask.mutate({ id: taskId, comment });
   };
 
-  const handleTaskComplete = () => {
+  const handleTaskComplete = (comment?: string) => {
     if (selectedTask) {
-      toggleTaskComplete(selectedTask.id);
+      if (selectedTask.isCompleted) {
+        uncompleteTask.mutate(selectedTask.id);
+      } else {
+        completeTask.mutate({ id: selectedTask.id, comment });
+      }
       setIsTaskDialogOpen(false);
       setSelectedTask(null);
     }

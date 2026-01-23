@@ -18,17 +18,24 @@ export async function sendTaskCompletedEmail(
   taskTitle: string,
   workerName: string,
   photoUrls?: string[] | null,
-  companyEmail?: string | null
+  companyEmail?: string | null,
+  comment?: string | null
 ) {
   try {
     // Используем email компании или email по умолчанию
     const toEmail = companyEmail || DEFAULT_ADMIN_EMAIL;
 
+    // Формируем текст письма
+    let emailText = "";
+    if (comment && comment.trim()) {
+      emailText = `Комментарий: ${comment.trim()}`;
+    }
+
     const mailOptions: nodemailer.SendMailOptions = {
       from: '"Task-Delegate" <admin@yesbeat.ru>',
       to: toEmail,
       subject: `${taskTitle} - ${workerName}`,
-      text: "",
+      text: emailText,
     };
 
     // Если есть фото, прикрепляем их к письму
@@ -41,7 +48,8 @@ export async function sendTaskCompletedEmail(
 
     await transporter.sendMail(mailOptions);
     const photoCount = photoUrls?.length || 0;
-    console.log(`Email sent to ${toEmail}: ${taskTitle} - ${workerName}${photoCount > 0 ? ` (with ${photoCount} photo${photoCount > 1 ? 's' : ''})` : ''}`);
+    const hasComment = comment && comment.trim();
+    console.log(`Email sent to ${toEmail}: ${taskTitle} - ${workerName}${photoCount > 0 ? ` (with ${photoCount} photo${photoCount > 1 ? 's' : ''})` : ''}${hasComment ? ' (with comment)' : ''}`);
   } catch (error) {
     console.error("Error sending email:", error);
   }
