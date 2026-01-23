@@ -1,5 +1,5 @@
 import { Switch, Route, useLocation } from "wouter";
-import { useLayoutEffect } from "react";
+import { useEffect, useRef } from "react";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
@@ -28,42 +28,40 @@ if ('scrollRestoration' in history) {
 // Component to reset scroll on route change
 function ScrollToTop() {
   const [location] = useLocation();
+  const prevLocation = useRef(location);
 
-  // useLayoutEffect runs synchronously before browser paint
-  useLayoutEffect(() => {
-    // Reset scroll on all possible scrollable elements
-    const resetScroll = () => {
-      // Standard scroll reset
-      window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+  useEffect(() => {
+    // Skip if location hasn't changed
+    if (prevLocation.current === location) return;
+    prevLocation.current = location;
+
+    // Force scroll to top using multiple methods
+    const scrollToTop = () => {
+      // Method 1: Standard window scroll
+      window.scrollTo(0, 0);
+
+      // Method 2: Direct property assignment
       document.documentElement.scrollTop = 0;
       document.body.scrollTop = 0;
 
-      // Reset any scrollable containers (for mobile)
-      const scrollableElements = document.querySelectorAll('[class*="overflow"], [class*="scroll"]');
-      scrollableElements.forEach(el => {
-        if (el instanceof HTMLElement) {
-          el.scrollTop = 0;
-        }
-      });
-
-      // iOS Safari specific - scroll the visual viewport
-      if ('visualViewport' in window && window.visualViewport) {
-        window.scrollTo(0, 0);
+      // Method 3: Scroll with options (for modern browsers)
+      try {
+        window.scroll({ top: 0, left: 0, behavior: 'instant' });
+      } catch (e) {
+        window.scroll(0, 0);
       }
     };
 
-    // Immediate reset
-    resetScroll();
+    // Execute immediately
+    scrollToTop();
 
-    // After React render
-    requestAnimationFrame(() => {
-      resetScroll();
-    });
+    // Execute after DOM updates
+    requestAnimationFrame(scrollToTop);
 
-    // Delayed reset for mobile browsers that delay scroll
-    setTimeout(() => {
-      resetScroll();
-    }, 50);
+    // Execute after a short delay (for mobile browsers)
+    setTimeout(scrollToTop, 0);
+    setTimeout(scrollToTop, 50);
+    setTimeout(scrollToTop, 100);
   }, [location]);
 
   return null;

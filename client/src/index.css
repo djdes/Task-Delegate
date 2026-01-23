@@ -90,18 +90,24 @@
     padding: 0;
     scroll-behavior: auto;
     overflow-x: hidden;
-  }
-
-  body, #root {
-    margin: 0;
-    padding: 0;
+    /* Ensure html is the scroll container, not body */
+    height: 100%;
   }
 
   body {
+    margin: 0;
+    padding: 0;
+    min-height: 100%;
     @apply bg-background text-foreground antialiased;
     font-family: var(--font-body);
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+  }
+
+  #root {
+    margin: 0;
+    padding: 0;
+    min-height: 100%;
   }
 
   h1, h2, h3, h4, h5, h6 {
