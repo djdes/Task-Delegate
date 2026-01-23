@@ -85,8 +85,8 @@ export default function Login() {
 
       await login(values.phone);
 
-      // SPA navigation to dashboard
-      setLocation("/dashboard");
+      // Hard reload to ensure fresh JS bundle is loaded after deploy
+      window.location.href = "/dashboard";
     } catch (error: any) {
       // Если пользователь не найден - перенаправляем на регистрацию с номером
       const phone = form.getValues("phone");
