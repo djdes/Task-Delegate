@@ -85,10 +85,8 @@ export default function Login() {
 
       await login(values.phone);
 
-      // Wait for keyboard to fully close, then reload to /dashboard
-      setTimeout(() => {
-        window.location.href = "/dashboard";
-      }, 100);
+      // SPA navigation to dashboard
+      setLocation("/dashboard");
     } catch (error: any) {
       // Если пользователь не найден - перенаправляем на регистрацию с номером
       const phone = form.getValues("phone");
