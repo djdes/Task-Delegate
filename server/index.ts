@@ -28,7 +28,7 @@ const generalLimiter = rateLimit({
   legacyHeaders: false,
   message: { message: "Слишком много запросов, попробуйте позже" },
   skip: (req) => req.path === "/api/health", // Пропускаем health check
-  validate: { xForwardedForHeader: false, trustProxy: false },
+  validate: false as any, // Полностью отключаем валидацию
 });
 
 // Rate limiting - строгий лимит для auth endpoints
@@ -38,7 +38,7 @@ const authLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
   message: { message: "Слишком много попыток входа, попробуйте через 15 минут" },
-  validate: { xForwardedForHeader: false, trustProxy: false },
+  validate: false as any, // Полностью отключаем валидацию
 });
 
 // Применяем общий rate limiter
