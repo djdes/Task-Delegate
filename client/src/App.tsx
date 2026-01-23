@@ -29,42 +29,40 @@ if ('scrollRestoration' in history) {
 function ScrollToTop() {
   const [location] = useLocation();
   const prevLocation = useRef(location);
+  const topRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     // Skip if location hasn't changed
     if (prevLocation.current === location) return;
     prevLocation.current = location;
 
-    // Force scroll to top using multiple methods
-    const scrollToTop = () => {
-      // Method 1: Standard window scroll
-      window.scrollTo(0, 0);
+    // iOS Safari hack: use scrollIntoView on a top element
+    if (topRef.current) {
+      topRef.current.scrollIntoView();
+    }
 
-      // Method 2: Direct property assignment
-      document.documentElement.scrollTop = 0;
-      document.body.scrollTop = 0;
+    // Fallback methods
+    window.scrollTo(0, 0);
+    document.documentElement.scrollTop = 0;
+    document.body.scrollTop = 0;
 
-      // Method 3: Scroll with options (for modern browsers)
-      try {
-        window.scroll({ top: 0, left: 0, behavior: 'instant' });
-      } catch (e) {
-        window.scroll(0, 0);
-      }
-    };
+    // Delayed attempts for iOS
+    const timeouts = [0, 10, 50, 100, 200].map(delay =>
+      setTimeout(() => {
+        if (topRef.current) {
+          topRef.current.scrollIntoView();
+        }
+        window.scrollTo(0, 0);
+        document.documentElement.scrollTop = 0;
+        document.body.scrollTop = 0;
+      }, delay)
+    );
 
-    // Execute immediately
-    scrollToTop();
-
-    // Execute after DOM updates
-    requestAnimationFrame(scrollToTop);
-
-    // Execute after a short delay (for mobile browsers)
-    setTimeout(scrollToTop, 0);
-    setTimeout(scrollToTop, 50);
-    setTimeout(scrollToTop, 100);
+    return () => timeouts.forEach(clearTimeout);
   }, [location]);
 
-  return null;
+  // Render an invisible element at the very top
+  return <div ref={topRef} style={{ position: 'absolute', top: 0, left: 0, width: 0, height: 0 }} />;
 }
 
 function Router() {
