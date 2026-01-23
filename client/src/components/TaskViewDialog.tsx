@@ -287,39 +287,49 @@ export function TaskViewDialog({
 
           {/* Photo upload section */}
           {(currentTask.requiresPhoto === true || (currentTask.requiresPhoto as any) === 1) && (
-            <div className="space-y-3">
-              <div className="flex items-center gap-2">
-                <Camera className="w-4 h-4 text-primary" />
-                <span className="text-sm font-semibold text-foreground">Фото результата</span>
-                {photoUrls.length === 0 && (
-                  <span className="text-xs text-orange-600 font-medium bg-orange-100 px-2 py-0.5 rounded-full">обязательно</span>
-                )}
-                {photoUrls.length > 0 && (
-                  <span className="text-xs text-green-600 font-medium bg-green-100 px-2 py-0.5 rounded-full">{photoUrls.length}/10</span>
+            <div className="bg-gradient-to-br from-orange-50 to-amber-50/50 rounded-2xl p-4 border border-orange-200/60">
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-orange-500/20 to-amber-500/10 flex items-center justify-center">
+                    <Camera className="w-4 h-4 text-orange-600" />
+                  </div>
+                  <span className="text-sm font-semibold text-foreground">Фото результата</span>
+                </div>
+                {photoUrls.length === 0 ? (
+                  <span className="text-xs text-orange-600 font-semibold bg-orange-100 px-2.5 py-1 rounded-full">обязательно</span>
+                ) : (
+                  <span className="text-xs text-emerald-600 font-semibold bg-emerald-100 px-2.5 py-1 rounded-full flex items-center gap-1">
+                    <Check className="w-3 h-3" />
+                    {photoUrls.length}/10
+                  </span>
                 )}
               </div>
 
               {/* Uploaded photos grid */}
               {photoUrls.length > 0 && (
-                <div className="grid grid-cols-3 gap-2">
+                <div className="grid grid-cols-3 gap-2 mb-3">
                   {photoUrls.map((url, index) => (
-                    <div key={url} className="relative aspect-square">
+                    <div key={url} className="relative aspect-square group">
                       <img
                         src={url}
                         alt={`Фото ${index + 1}`}
-                        className="w-full h-full object-cover rounded-lg border-2 border-green-500 cursor-pointer hover:opacity-90 transition-opacity"
+                        className="w-full h-full object-cover rounded-xl border-2 border-emerald-400 cursor-pointer hover:opacity-95 transition-all shadow-sm"
                         onClick={() => {
                           setFullscreenPhotoIndex(index);
                           setIsPhotoFullscreen(true);
                         }}
                       />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent rounded-xl pointer-events-none" />
                       <button
                         onClick={() => handleDeletePhoto(url)}
                         disabled={deletePhotoMutation.isPending}
-                        className="absolute top-1 right-1 p-1.5 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors shadow-md"
+                        className="absolute top-1.5 right-1.5 p-1.5 bg-red-500/90 backdrop-blur-sm text-white rounded-lg hover:bg-red-600 transition-all shadow-lg opacity-90 group-hover:opacity-100"
                       >
                         <Trash2 className="w-3 h-3" />
                       </button>
+                      <div className="absolute bottom-1.5 left-1.5 bg-black/50 backdrop-blur-sm text-white text-xs px-2 py-0.5 rounded-md font-medium">
+                        {index + 1}
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -338,7 +348,7 @@ export function TaskViewDialog({
                   />
                   <label
                     htmlFor="photo-upload"
-                    className={`flex flex-col items-center justify-center w-full ${photoUrls.length > 0 ? 'h-20' : 'h-32'} border-2 border-dashed border-primary/40 bg-primary/5 rounded-xl cursor-pointer hover:border-primary hover:bg-primary/10 transition-all active:scale-[0.99]`}
+                    className={`flex flex-col items-center justify-center w-full ${photoUrls.length > 0 ? 'h-16' : 'h-28'} border-2 border-dashed border-orange-300 bg-white/80 rounded-xl cursor-pointer hover:border-orange-400 hover:bg-orange-50/50 transition-all active:scale-[0.99]`}
                   >
                     {preview ? (
                       <div className="relative w-full h-full">
@@ -348,23 +358,25 @@ export function TaskViewDialog({
                           className="w-full h-full object-cover rounded-xl"
                         />
                         {uploadPhotoMutation.isPending && (
-                          <div className="absolute inset-0 bg-black/50 rounded-xl flex items-center justify-center">
-                            <div className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                          <div className="absolute inset-0 bg-black/60 rounded-xl flex items-center justify-center backdrop-blur-sm">
+                            <div className="w-8 h-8 border-3 border-white border-t-transparent rounded-full animate-spin"></div>
                           </div>
                         )}
                       </div>
                     ) : (
-                      <>
-                        <div className={`${photoUrls.length > 0 ? 'w-8 h-8' : 'w-12 h-12'} rounded-full bg-primary/10 flex items-center justify-center mb-1`}>
-                          <Camera className={`${photoUrls.length > 0 ? 'w-4 h-4' : 'w-6 h-6'} text-primary`} />
+                      <div className="flex items-center gap-3">
+                        <div className={`${photoUrls.length > 0 ? 'w-10 h-10' : 'w-12 h-12'} rounded-xl bg-gradient-to-br from-orange-100 to-amber-100 flex items-center justify-center`}>
+                          <Camera className={`${photoUrls.length > 0 ? 'w-5 h-5' : 'w-6 h-6'} text-orange-500`} />
                         </div>
-                        <p className="text-sm font-semibold text-foreground">
-                          {photoUrls.length > 0 ? 'Добавить ещё фото' : 'Добавить фото'}
-                        </p>
-                        {photoUrls.length === 0 && (
-                          <p className="text-xs text-muted-foreground">камера или галерея</p>
-                        )}
-                      </>
+                        <div className="text-left">
+                          <p className="text-sm font-semibold text-foreground">
+                            {photoUrls.length > 0 ? 'Добавить ещё' : 'Добавить фото'}
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            {photoUrls.length > 0 ? `осталось ${10 - photoUrls.length}` : 'камера или галерея'}
+                          </p>
+                        </div>
+                      </div>
                     )}
                   </label>
                 </div>
@@ -374,28 +386,32 @@ export function TaskViewDialog({
 
           {/* User comment field */}
           {canComplete && !currentTask.isCompleted && (
-            <div className="space-y-2">
-              <div className="flex items-center gap-2">
-                <MessageSquare className="w-4 h-4 text-primary" />
-                <span className="text-sm font-semibold text-foreground">Комментарий</span>
-                <span className="text-xs text-muted-foreground">(необязательно)</span>
+            <div className="bg-gradient-to-br from-slate-50 to-slate-100/50 rounded-2xl p-4 border border-slate-200/60">
+              <div className="flex items-center gap-2.5 mb-3">
+                <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center">
+                  <MessageSquare className="w-4 h-4 text-primary" />
+                </div>
+                <div>
+                  <span className="text-sm font-semibold text-foreground">Комментарий</span>
+                  <span className="text-xs text-muted-foreground ml-2">необязательно</span>
+                </div>
               </div>
               <Textarea
                 value={userComment}
                 onChange={(e) => setUserComment(e.target.value)}
-                placeholder="Добавьте комментарий к выполненной задаче..."
-                className="min-h-[80px] resize-none"
+                placeholder="Напишите комментарий к задаче..."
+                className="min-h-[100px] resize-none bg-white border-slate-200 focus:border-primary/50 focus:ring-primary/20 rounded-xl text-sm placeholder:text-slate-400"
               />
             </div>
           )}
 
           {/* Action buttons */}
-          <div className="flex flex-col gap-2 pt-1">
+          <div className="flex flex-col gap-2.5 pt-2">
             {canComplete && (
               currentTask.isCompleted ? (
                 <button
                   onClick={onComplete}
-                  className="flex items-center justify-center gap-2 w-full h-12 bg-muted hover:bg-muted/80 text-foreground rounded-xl font-semibold transition-colors"
+                  className="flex items-center justify-center gap-2.5 w-full h-14 bg-gradient-to-r from-slate-100 to-slate-50 hover:from-slate-200 hover:to-slate-100 text-foreground rounded-2xl font-semibold transition-all border border-slate-200 shadow-sm"
                 >
                   <RotateCcw className="w-5 h-5" />
                   Вернуть в работу
@@ -404,9 +420,11 @@ export function TaskViewDialog({
                 <button
                   onClick={handleComplete}
                   disabled={currentTask.requiresPhoto && photoUrls.length === 0}
-                  className="flex items-center justify-center gap-2 w-full h-12 bg-green-500 hover:bg-green-600 text-white rounded-xl font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-md shadow-green-500/20"
+                  className="flex items-center justify-center gap-2.5 w-full h-14 bg-gradient-to-r from-emerald-500 to-green-500 hover:from-emerald-600 hover:to-green-600 text-white rounded-2xl font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-emerald-500/30 active:scale-[0.98]"
                 >
-                  <Check className="w-5 h-5" />
+                  <div className="w-6 h-6 rounded-full bg-white/20 flex items-center justify-center">
+                    <Check className="w-4 h-4" />
+                  </div>
                   {currentTask.requiresPhoto && photoUrls.length === 0
                     ? "Сначала загрузите фото"
                     : "Завершить задачу"
@@ -416,7 +434,7 @@ export function TaskViewDialog({
             )}
             <button
               onClick={() => onOpenChange(false)}
-              className="w-full h-11 text-muted-foreground hover:text-foreground hover:bg-muted/50 rounded-xl font-medium transition-colors"
+              className="w-full h-12 text-muted-foreground hover:text-foreground hover:bg-slate-100 rounded-2xl font-medium transition-all"
             >
               Закрыть
             </button>
