@@ -113,16 +113,6 @@
     -webkit-overflow-scrolling: touch;
   }
 
-  /* Override min-h-screen inside #root - use 100% instead of 100vh */
-  #root > div {
-    min-height: 100% !important;
-  }
-
-  /* Fix for pages that use min-h-screen directly */
-  #root .min-h-screen {
-    min-height: 100% !important;
-  }
-
   h1, h2, h3, h4, h5, h6 {
     font-family: var(--font-display);
     @apply font-semibold tracking-tight text-foreground;
