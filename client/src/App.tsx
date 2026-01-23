@@ -31,17 +31,39 @@ function ScrollToTop() {
 
   // useLayoutEffect runs synchronously before browser paint
   useLayoutEffect(() => {
-    // Immediate scroll reset
-    window.scrollTo(0, 0);
-    document.documentElement.scrollTop = 0;
-    document.body.scrollTop = 0;
-
-    // Also schedule for next frame to ensure it happens after React render
-    requestAnimationFrame(() => {
-      window.scrollTo(0, 0);
+    // Reset scroll on all possible scrollable elements
+    const resetScroll = () => {
+      // Standard scroll reset
+      window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
       document.documentElement.scrollTop = 0;
       document.body.scrollTop = 0;
+
+      // Reset any scrollable containers (for mobile)
+      const scrollableElements = document.querySelectorAll('[class*="overflow"], [class*="scroll"]');
+      scrollableElements.forEach(el => {
+        if (el instanceof HTMLElement) {
+          el.scrollTop = 0;
+        }
+      });
+
+      // iOS Safari specific - scroll the visual viewport
+      if ('visualViewport' in window && window.visualViewport) {
+        window.scrollTo(0, 0);
+      }
+    };
+
+    // Immediate reset
+    resetScroll();
+
+    // After React render
+    requestAnimationFrame(() => {
+      resetScroll();
     });
+
+    // Delayed reset for mobile browsers that delay scroll
+    setTimeout(() => {
+      resetScroll();
+    }, 50);
   }, [location]);
 
   return null;
