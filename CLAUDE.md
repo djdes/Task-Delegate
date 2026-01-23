@@ -2,6 +2,19 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Git Workflow
+
+**ВАЖНО:**
+- Все сообщения коммитов писать на **русском языке**
+- После каждого коммита автоматически делать `git push origin main`
+- Формат коммита: краткое описание изменений на русском
+
+Пример:
+```bash
+git commit -m "Исправлен скролл на мобильных устройствах"
+git push origin main
+```
+
 ## Build & Development Commands
 
 ```bash
