@@ -147,7 +147,7 @@ export default function Login() {
           </div>
         </div>
         <h1 className="text-4xl font-black text-white tracking-tight drop-shadow-lg">
-          Ежедневные платные задачи
+          Контроль производственных процессов
         </h1>
       </div>
 
